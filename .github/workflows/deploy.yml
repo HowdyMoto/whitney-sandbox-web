@@ -1,0 +1,30 @@
+name: Build & Deploy via SFTP
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Deploy to server via SFTP
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp > /dev/null
+          lftp -u "$SFTP_USERNAME","$SFTP_PASSWORD" \
+            -e "set sftp:auto-confirm yes; mirror -R --parallel=10 --delete ./dist/ wrightbagwell.com/whitney/; bye" \
+            sftp://$SFTP_HOST
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
