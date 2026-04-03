@@ -1,0 +1,5 @@
+# Piano instrument configuration
+display_name = "Piano"
+key = "piano"
+midi_low = 21
+midi_high = 108
