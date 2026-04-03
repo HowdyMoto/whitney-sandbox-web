@@ -10,11 +10,6 @@ export interface InstrumentInfo {
 // In production, this could be generated at build time from the TOML files.
 const INSTRUMENTS: InstrumentInfo[] = [
   { key: 'piano',       displayName: 'Piano',              folderName: 'Piano',       midiLow: 21, midiHigh: 108 },
-  { key: 'harp',        displayName: 'Harp',               folderName: 'Harp',        midiLow: 21, midiHigh: 108 },
-  { key: 'vibraphone',  displayName: 'Vibraphone',         folderName: 'Vibraphone',  midiLow: 21, midiHigh: 108 },
-  { key: 'koto',        displayName: 'Koto',               folderName: 'Koto',        midiLow: 21, midiHigh: 108 },
-  { key: 'guzheng',     displayName: 'Guzheng',            folderName: 'Guzheng',     midiLow: 21, midiHigh: 108 },
-  { key: 'pipa',        displayName: 'Pipa',               folderName: 'Pipa',        midiLow: 21, midiHigh: 108 },
 ];
 
 const instrumentMap = new Map<string, InstrumentInfo>();
