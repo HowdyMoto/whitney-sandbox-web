@@ -14,7 +14,8 @@ import { BloomPass, defaultBloomConfig } from './rendering/BloomPass.js';
 import type { BloomConfig } from './rendering/BloomPass.js';
 import { BackgroundShaderManager } from './rendering/BackgroundShaderManager.js';
 import { AudioReactiveData } from './physics/AudioReactiveData.js';
-import { countNotesInRange } from './music/ScaleSystem.js';
+import { countNotesInRange, getAllScales } from './music/ScaleSystem.js';
+import { getAllInstruments } from './audio/InstrumentLibrary.js';
 import { defaultConfig, defaultRenderConfig } from './types.js';
 import type { Config, RenderConfig, TriggerEvent } from './types.js';
 
@@ -474,29 +475,115 @@ export class App {
   }
 
   private randomizeMode(): void {
+    const rand = Math.random;
+    const pick = <T>(arr: T[]): T => arr[Math.floor(rand() * arr.length)]!;
+    const range = (min: number, max: number) => min + rand() * (max - min);
+    const snap = (v: number, step: number) => Math.round(v / step) * step;
+    const c = this.config;
+    const rc = this.renderConfig;
+
+    // ── Animation mode ──
     const names = this.modeLoader.getModeNames();
-    if (names.length === 0) return;
+    if (names.length > 0) {
+      let newMode: string;
+      if (names.length === 1) {
+        newMode = names[0]!;
+      } else {
+        do { newMode = pick(names); } while (newMode === c.animationMode);
+      }
+      c.animationMode = newMode;
 
-    let newMode: string;
-    if (names.length === 1) {
-      newMode = names[0]!;
+      const mode = this.modeLoader.getMode(newMode);
+      if (mode) {
+        // Randomize mode-specific params within their slider ranges
+        const params: Record<string, number> = {};
+        for (const p of mode.paramDefs) {
+          params[p.name] = snap(range(p.minVal, p.maxVal), p.step || 0.01);
+        }
+        c.modeParams = params;
+      }
+    }
+
+    // ── Rotation ──
+    c.rotationDirection = pick(['clockwise', 'counterclockwise', 'alternating', 'pingpong']);
+
+    // ── Scale & note range ──
+    const scales = getAllScales();
+    c.scale = pick(scales).name;
+    c.lowNote = Math.floor(range(21, 60));
+    c.highNote = Math.floor(range(Math.max(c.lowNote + 12, 60), 108));
+    c.numNotes = Math.max(1, countNotesInRange(c.scale, c.lowNote, c.highNote));
+
+    // ── Instrument ──
+    const instruments = getAllInstruments();
+    const newInstrument = pick(instruments).key;
+    if (newInstrument !== c.instrument) {
+      this.switchInstrument(newInstrument);
+    }
+
+    // ── Timing ──
+    c.cycleDuration = snap(range(30, 300), 1);
+    c.speedMultiplier = snap(range(0.3, 2.0), 0.1);
+
+    // ── Color scheme ──
+    const schemeKeys = ['rainbow', 'harmonic', 'neon', 'aurora', 'fire', 'pastel', 'mono', 'ocean', 'sunset', 'forest'];
+    rc.colorScheme.name = pick(schemeKeys);
+    rc.colorScheme.saturationMultiplier = range(0.3, 1);
+    rc.colorScheme.brightnessMultiplier = range(0.5, 1);
+
+    // ── Dots ──
+    rc.dot.size = snap(range(4, 24), 1);
+    rc.dot.showGlow = rand() > 0.5;
+    rc.dot.glowOpacity = range(0.2, 0.8);
+
+    // ── Trails ──
+    rc.trail.mode = pick(['ribbon', 'particle', 'none']);
+    rc.trail.width = snap(range(1, 12), 0.5);
+    rc.trail.lifetime = snap(range(0.3, 3), 0.1);
+    rc.trail.opacity = range(0.3, 0.9);
+    rc.trail.fadeExponent = snap(range(1, 4), 0.1);
+    rc.trail.particleSize = snap(range(1, 6), 0.5);
+    rc.trail.particleLifetime = snap(range(0.2, 1.5), 0.1);
+    rc.trail.particleSpread = snap(range(10, 180), 1);
+    rc.trail.particleEjectSpeed = snap(range(0, 100), 1);
+
+    // ── Burst particles ──
+    rc.particle.emitOnTrigger = rand() > 0.5;
+    rc.particle.burstCount = snap(range(4, 30), 1);
+    rc.particle.speed = snap(range(20, 200), 1);
+    rc.particle.lifetime = snap(range(0.2, 1.5), 0.1);
+    rc.particle.size = snap(range(2, 12), 0.5);
+    rc.particle.gravity = snap(range(0, 3000), 50);
+
+    // ── Bloom ──
+    this.bloomConfig.enabled = rand() > 0.3;
+    this.bloomConfig.intensity = snap(range(0.2, 1.5), 0.05);
+    this.bloomConfig.threshold = snap(range(0.1, 0.6), 0.01);
+    this.bloomConfig.softKnee = snap(range(0.2, 0.8), 0.01);
+
+    // ── Background shader ──
+    const shaderDefs = this.bgShaderManager.getShaderDefs();
+    if (shaderDefs.length > 0 && rand() > 0.3) {
+      const shader = pick(shaderDefs);
+      c.backgroundShader = shader.key;
+      // Randomize shader params within their rand ranges
+      for (const p of shader.params) {
+        const val = p.type === 'bool'
+          ? (rand() > 0.5 ? 1 : 0)
+          : range(p.randMin, p.randMax);
+        this.bgShaderManager.setParam(shader.key, p.uniform, val);
+      }
     } else {
-      do {
-        newMode = names[Math.floor(Math.random() * names.length)]!;
-      } while (newMode === this.config.animationMode);
+      c.backgroundShader = 'none';
     }
 
-    this.config.animationMode = newMode;
+    // ── Background color ──
+    rc.backgroundColor = [range(0, 0.1), range(0, 0.1), range(0, 0.12)];
 
-    const mode = this.modeLoader.getMode(newMode);
-    if (mode) {
-      this.config.modeParams = this.modeLoader.loadDefaultParams(mode);
-    }
-
-    // Reset trails for the new mode
+    // Reset trails and show the new mode name
     this.trailRenderer.reset();
-
-    this.showModeName(newMode);
+    this.settingsOverlay.rebuild();
+    this.showModeName(c.animationMode);
   }
 
   private showModeName(name: string): void {
