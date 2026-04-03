@@ -1,7 +1,7 @@
 // Bottom-center transport bar with circular icon buttons using SVG icons.
 // Fades in on mouse activity, fades out after idle.
 
-const ICON_PATH = '/assets/UI';
+const ICON_PATH = `${import.meta.env.BASE_URL}assets/UI`;
 
 function icon(name: string): string {
   return `<img src="${ICON_PATH}/${name}.svg" alt="" draggable="false">`;

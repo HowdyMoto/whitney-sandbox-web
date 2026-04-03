@@ -70,7 +70,7 @@ export class CustomModeLoader {
   private modeNames: string[] = [];
 
   async loadAll(): Promise<void> {
-    const promises = MODE_FILES.map(f => this.loadMode(`/modes/${f}.toml`));
+    const promises = MODE_FILES.map(f => this.loadMode(`${import.meta.env.BASE_URL}modes/${f}.toml`));
     await Promise.all(promises);
     console.log(`Loaded ${this.modes.size} animation modes`);
   }

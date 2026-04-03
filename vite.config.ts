@@ -30,6 +30,7 @@ function serveInstruments(): Plugin {
 }
 
 export default defineConfig({
+  base: '/whitney/',
   plugins: [serveInstruments()],
   server: {
     fs: {

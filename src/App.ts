@@ -143,8 +143,8 @@ export class App {
     ];
     const displayShaders = ['equalizer_display', 'fireworks_display', 'fluid_display', 'phosphor_trails_display'];
     const allShaderUrls = [
-      ...shaderFiles.map(f => `/shaders/backgrounds/${f}.frag`),
-      ...displayShaders.map(f => `/shaders/backgrounds/${f}.frag`),
+      ...shaderFiles.map(f => `${import.meta.env.BASE_URL}shaders/backgrounds/${f}.frag`),
+      ...displayShaders.map(f => `${import.meta.env.BASE_URL}shaders/backgrounds/${f}.frag`),
     ];
     this.bgShaderManager.loadShaders(allShaderUrls);
 

@@ -132,7 +132,7 @@ export class AudioEngine {
 
     const fileName = midiToFileName(midiNote);
     const velCode = VELOCITY_VALUES[layerIdx]!.toString().padStart(3, '0');
-    const url = `/instruments/${folderName}/${fileName}_v${velCode}.mp3`;
+    const url = `${import.meta.env.BASE_URL}instruments/${folderName}/${fileName}_v${velCode}.mp3`;
 
     try {
       const response = await fetch(url);
