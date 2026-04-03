@@ -1,0 +1,21 @@
+name = "Pendulum Wave"
+description = "Dots swing like pendulums of increasing length, creating wave patterns"
+supportsRotation = false
+isLinear = true
+
+[position]
+x = "screenW / 2 + sin(pi() / 3 * sin(cycleProgress * two_pi() * speed)) * screenH * (0.15 + t * 0.70)"
+y = "screenH * 0.05 + cos(pi() / 3 * sin(cycleProgress * two_pi() * speed)) * screenH * (0.15 + t * 0.70)"
+
+[trigger]
+value = "fmod(cycleProgress * speed * 2, 1.0)"
+
+[marker.1]
+x = "screenW / 2"
+y = "screenH * 0.05 + screenH * (0.15 + t * 0.70)"
+
+[path]
+x = "screenW / 2 + sin(sweep) * screenH * (0.15 + t * 0.70)"
+y = "screenH * 0.05 + cos(sweep) * screenH * (0.15 + t * 0.70)"
+range_min = "-pi() / 3"
+range_max = "pi() / 3"

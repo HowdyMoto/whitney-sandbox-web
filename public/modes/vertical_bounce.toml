@@ -1,0 +1,25 @@
+name = "Vertical Bounce"
+description = "Dots bounce top to bottom at harmonic speeds"
+supportsRotation = false
+isLinear = true
+
+[position]
+x = "screenW * 0.08 + t * screenW * 0.84"
+y = "screenH * 0.02 + (1 - abs(fmod(cycleProgress * speed * 2, 2) - 1)) * screenH * 0.96"
+
+[trigger]
+value = "fmod(cycleProgress * speed * 2, 1.0)"
+
+[marker.1]
+x = "screenW * 0.08 + t * screenW * 0.84"
+y = "screenH * 0.02"
+
+[marker.2]
+x = "screenW * 0.08 + t * screenW * 0.84"
+y = "screenH * 0.98"
+
+[path]
+x = "screenW * 0.08 + t * screenW * 0.84"
+y = "screenH * 0.02 + sweep * screenH * 0.96"
+range_min = "0"
+range_max = "1"

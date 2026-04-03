@@ -1,0 +1,32 @@
+name = "Epicycle"
+description = "Dots trace loop-the-loop paths with a primary orbit and secondary loops"
+supportsRotation = true
+
+[params.loopRatio]
+label = "Loops per Orbit"
+default = 3.0
+min = 1.0
+max = 8.0
+
+[params.loopSize]
+label = "Loop Size"
+default = 0.30
+min = 0.05
+max = 0.60
+
+[position]
+x = "cx + amplitude * (1 - loopSize) * cos(phase) + amplitude * loopSize * cos(phase * loopRatio - (loopRatio - 1) * pi()/2)"
+y = "cy - amplitude * (1 - loopSize) * sin(phase) - amplitude * loopSize * sin(phase * loopRatio - (loopRatio - 1) * pi()/2)"
+
+[trigger]
+value = "fmod(cycleProgress * speed, 1.0)"
+
+[marker.1]
+x = "cx + amplitude * cos(pi() / 2)"
+y = "cy - amplitude * sin(pi() / 2)"
+
+[path]
+x = "cx + amplitude * (1 - loopSize) * cos(sweep) + amplitude * loopSize * cos(sweep * loopRatio - (loopRatio - 1) * pi()/2)"
+y = "cy - amplitude * (1 - loopSize) * sin(sweep) - amplitude * loopSize * sin(sweep * loopRatio - (loopRatio - 1) * pi()/2)"
+range_min = "0"
+range_max = "two_pi()"

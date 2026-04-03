@@ -1,0 +1,30 @@
+name = "Rainbow"
+description = "Dots travel along concentric semicircular arcs like a rainbow"
+supportsRotation = false
+
+[params.sweepMode]
+label = "Sweep (0=Bounce 1=OneWay)"
+default = 0.0
+min = 0.0
+max = 1.0
+
+[position]
+x = "cx + (min(screenW, screenH) * (0.15 + t * 0.60)) * cos(pi() * (1 - if(sweepMode > 0.5, localT, if(localT < 0.5, localT * 2, (1 - localT) * 2))))"
+y = "screenH * 0.85 - (min(screenW, screenH) * (0.15 + t * 0.60)) * sin(pi() * (1 - if(sweepMode > 0.5, localT, if(localT < 0.5, localT * 2, (1 - localT) * 2))))"
+
+[trigger]
+value = "fmod(cycleProgress * speed * 2, 1.0)"
+
+[marker.1]
+x = "cx - min(screenW, screenH) * (0.15 + t * 0.60)"
+y = "screenH * 0.85"
+
+[marker.2]
+x = "cx + min(screenW, screenH) * (0.15 + t * 0.60)"
+y = "screenH * 0.85"
+
+[path]
+x = "cx + (min(screenW, screenH) * (0.15 + t * 0.60)) * cos(pi() - sweep)"
+y = "screenH * 0.85 - (min(screenW, screenH) * (0.15 + t * 0.60)) * sin(pi() - sweep)"
+range_min = "0"
+range_max = "pi()"

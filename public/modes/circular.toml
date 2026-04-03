@@ -1,0 +1,20 @@
+name = "Circular"
+description = "Dots orbit in concentric circles at harmonic speeds"
+supportsRotation = true
+
+[position]
+x = "cx + amplitude * cos(phase)"
+y = "cy - amplitude * sin(phase)"
+
+[trigger]
+value = "fmod(cycleProgress * speed, 1.0)"
+
+[marker.1]
+x = "cx + amplitude * cos(pi() / 2)"
+y = "cy - amplitude * sin(pi() / 2)"
+
+[path]
+x = "cx + amplitude * cos(sweep)"
+y = "cy - amplitude * sin(sweep)"
+range_min = "0"
+range_max = "two_pi()"

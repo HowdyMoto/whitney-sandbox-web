@@ -1,0 +1,25 @@
+name = "Horizontal Bounce"
+description = "Dots bounce left to right at harmonic speeds"
+supportsRotation = false
+isLinear = true
+
+[position]
+x = "screenW * 0.02 + (1 - abs(fmod(cycleProgress * speed * 2, 2) - 1)) * screenW * 0.96"
+y = "screenH * 0.08 + t * screenH * 0.84"
+
+[trigger]
+value = "fmod(cycleProgress * speed * 2, 1.0)"
+
+[marker.1]
+x = "screenW * 0.02"
+y = "screenH * 0.08 + t * screenH * 0.84"
+
+[marker.2]
+x = "screenW * 0.98"
+y = "screenH * 0.08 + t * screenH * 0.84"
+
+[path]
+x = "screenW * 0.02 + sweep * screenW * 0.96"
+y = "screenH * 0.08 + t * screenH * 0.84"
+range_min = "0"
+range_max = "1"

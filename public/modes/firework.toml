@@ -1,0 +1,20 @@
+name = "Firework"
+description = "All dots pulse outward to the same distance along radial spokes"
+supportsRotation = false
+
+[position]
+x = "cx + maxRadius * sin(pi() * localT) * cos(t * two_pi())"
+y = "cy - maxRadius * sin(pi() * localT) * sin(t * two_pi())"
+
+[trigger]
+value = "fmod(cycleProgress * speed, 1.0)"
+
+[marker.1]
+x = "cx"
+y = "cy"
+
+[path]
+x = "cx + maxRadius * sin(sweep) * cos(t * two_pi())"
+y = "cy - maxRadius * sin(sweep) * sin(t * two_pi())"
+range_min = "0"
+range_max = "pi()"

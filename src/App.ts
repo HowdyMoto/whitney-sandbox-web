@@ -1,0 +1,524 @@
+import { initWebGL, getWidth, getHeight, resizeCanvas } from './rendering/WebGLContext.js';
+import { DotRenderer } from './rendering/DotRenderer.js';
+import { PathLineRenderer } from './rendering/PathLineRenderer.js';
+import { TrailRenderer } from './rendering/TrailRenderer.js';
+import { ParticleSystem } from './rendering/ParticleSystem.js';
+import { AnimationEngine } from './animation/AnimationEngine.js';
+import { CustomModeLoader } from './animation/CustomModeLoader.js';
+import { AudioEngine } from './audio/AudioEngine.js';
+import { SettingsOverlay } from './ui/SettingsOverlay.js';
+import { TransportBar } from './ui/TransportBar.js';
+import { PerfOverlay } from './ui/PerfOverlay.js';
+import { PianoKeyboard } from './ui/PianoKeyboard.js';
+import { BloomPass, defaultBloomConfig } from './rendering/BloomPass.js';
+import type { BloomConfig } from './rendering/BloomPass.js';
+import { BackgroundShaderManager } from './rendering/BackgroundShaderManager.js';
+import { AudioReactiveData } from './physics/AudioReactiveData.js';
+import { countNotesInRange } from './music/ScaleSystem.js';
+import { defaultConfig, defaultRenderConfig } from './types.js';
+import type { Config, RenderConfig, TriggerEvent } from './types.js';
+
+export class App {
+  private gl: WebGL2RenderingContext;
+  private dotRenderer: DotRenderer;
+  private pathLineRenderer: PathLineRenderer;
+  private trailRenderer: TrailRenderer;
+  private particleSystem: ParticleSystem;
+  private animEngine: AnimationEngine;
+  private modeLoader: CustomModeLoader;
+  private audioEngine: AudioEngine;
+  private settingsOverlay: SettingsOverlay;
+  private transportBar: TransportBar;
+  private perfOverlay: PerfOverlay;
+  private pianoKeyboard: PianoKeyboard;
+  private bloomPass: BloomPass;
+  private bloomConfig: BloomConfig;
+  private bgShaderManager: BackgroundShaderManager;
+  private audioReactive: AudioReactiveData;
+  private config: Config;
+  private renderConfig: RenderConfig;
+  private isPlaying = false;
+  private lastTime = 0;
+  private animFrameId = 0;
+  private audioStarted = false;
+
+  // Trail particle emission accumulator (per dot)
+  private trailEmitAccum: number[] = [];
+
+  // Overlay elements
+  private modeLabel: HTMLDivElement;
+  private modeLabelTimeout = 0;
+  private settingsButton: HTMLButtonElement;
+  private mouseIdleTimeout = 0;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.gl = initWebGL(canvas);
+    this.dotRenderer = new DotRenderer(this.gl);
+    this.pathLineRenderer = new PathLineRenderer(this.gl);
+    this.trailRenderer = new TrailRenderer(this.gl);
+    this.particleSystem = new ParticleSystem(this.gl);
+    this.animEngine = new AnimationEngine();
+    this.modeLoader = new CustomModeLoader();
+    this.audioEngine = new AudioEngine();
+    this.settingsOverlay = new SettingsOverlay();
+    this.pianoKeyboard = new PianoKeyboard();
+    this.transportBar = new TransportBar({
+      onPlayPause: () => { this.togglePlay(); },
+      onMute: () => { this.config.soundEnabled = !this.config.soundEnabled; this.updateTransport(); },
+      onKeyboard: () => { this.pianoKeyboard.toggle(); this.updateTransport(); },
+      onRandomize: () => this.randomizeMode(),
+      onPerfToggle: () => { this.perfOverlay.toggle(); this.updateTransport(); },
+    });
+    this.perfOverlay = new PerfOverlay();
+    this.bloomPass = new BloomPass(this.gl, 1, 1); // resized in draw()
+    this.bloomConfig = defaultBloomConfig();
+    this.bgShaderManager = new BackgroundShaderManager(this.gl);
+    this.audioReactive = new AudioReactiveData();
+    this.config = defaultConfig();
+    this.renderConfig = defaultRenderConfig();
+
+    // Mode name overlay
+    this.modeLabel = document.createElement('div');
+    Object.assign(this.modeLabel.style, {
+      position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
+      color: 'white', fontFamily: "'Outfit', system-ui, sans-serif", fontSize: '20px',
+      fontWeight: '300', letterSpacing: '2px', opacity: '0',
+      transition: 'opacity 0.3s', pointerEvents: 'none', zIndex: '10',
+      textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+    });
+    document.body.appendChild(this.modeLabel);
+
+    // Edge tab — thin strip on the left edge, expands on hover/mouse near
+    this.settingsButton = document.createElement('button');
+    this.settingsButton.className = 'edge-tab';
+    this.settingsButton.innerHTML = '&#x276F;'; // ❯ right chevron
+    this.settingsButton.title = 'Settings (O)';
+    this.settingsButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.settingsOverlay.toggle();
+      this.updateSettingsButtonVisibility();
+    });
+    document.body.appendChild(this.settingsButton);
+    this.injectEdgeTabStyles();
+
+    // Mouse movement shows the edge tab, idle hides it
+    window.addEventListener('mousemove', (e) => this.onMouseActivity(e));
+    window.addEventListener('touchstart', () => this.onMouseActivity(), { passive: true });
+
+    // Click/tap anywhere toggles settings overlay
+    canvas.addEventListener('click', () => {
+      this.settingsOverlay.toggle();
+      this.updateSettingsButtonVisibility();
+    });
+
+    // Right-click to randomize
+    canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      this.randomizeMode();
+    });
+
+    // Two-finger tap to randomize (detect 2+ touches)
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length >= 2) {
+        e.preventDefault();
+        this.randomizeMode();
+      }
+    });
+
+    // Scroll to adjust speed
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      this.config.speedMultiplier = Math.max(0.1, Math.min(4, this.config.speedMultiplier + delta));
+      this.showModeName(`Speed: ${this.config.speedMultiplier.toFixed(1)}x`);
+    }, { passive: false });
+
+    this.animEngine.init(this.config);
+
+    // Load background shaders
+    const shaderFiles = [
+      'equalizer', 'fireworks', 'fluid', 'fractal_bloom',
+      'impulse', 'kaleidoscope', 'neural_web', 'phosphor_trails',
+      'sacred_geometry', 'spectrum', 'string_theory',
+    ];
+    const displayShaders = ['equalizer_display', 'fireworks_display', 'fluid_display', 'phosphor_trails_display'];
+    const allShaderUrls = [
+      ...shaderFiles.map(f => `/shaders/backgrounds/${f}.frag`),
+      ...displayShaders.map(f => `/shaders/backgrounds/${f}.frag`),
+    ];
+    this.bgShaderManager.loadShaders(allShaderUrls);
+
+    this.modeLoader.loadAll().then(() => {
+      this.animEngine.setModeLoader(this.modeLoader);
+      this.pathLineRenderer.setModeLoader(this.modeLoader);
+
+      const mode = this.modeLoader.getMode(this.config.animationMode);
+      if (mode) {
+        this.config.modeParams = this.modeLoader.loadDefaultParams(mode);
+      }
+
+      // Bind settings overlay to live config objects
+      this.settingsOverlay.bind(
+        this.config, this.renderConfig, this.bloomConfig,
+        this.modeLoader, this.bgShaderManager,
+        () => { /* onChange — configs are mutated in place */ },
+        (key) => this.switchInstrument(key),
+        () => this.updateSettingsButtonVisibility(),
+      );
+
+      this.lastTime = performance.now() / 1000;
+      this.loop();
+      this.showModeName(this.config.animationMode);
+    });
+
+    window.addEventListener('keydown', (e) => this.onKeyDown(e));
+  }
+
+  private togglePlay(): void {
+    this.isPlaying = !this.isPlaying;
+    if (this.isPlaying) this.ensureAudio();
+    this.updateTransport();
+  }
+
+  private async ensureAudio(): Promise<void> {
+    if (this.audioStarted) return;
+    this.audioStarted = true;
+    await this.audioEngine.ensureContext();
+    await this.audioEngine.switchInstrument(
+      this.config.instrument, this.config.lowNote, this.config.highNote,
+    );
+  }
+
+  private loop = (): void => {
+    this.animFrameId = requestAnimationFrame(this.loop);
+
+    const now = performance.now() / 1000;
+    const dt = Math.min(now - this.lastTime, 0.1);
+    this.lastTime = now;
+
+    resizeCanvas();
+    this.update(dt);
+    this.draw();
+
+    // Update piano keyboard
+    this.pianoKeyboard.setConfig(
+      this.config.lowNote, this.config.highNote, this.config.scale,
+      this.renderConfig.colorScheme.name,
+      this.renderConfig.colorScheme.saturationMultiplier,
+      this.renderConfig.colorScheme.brightnessMultiplier,
+      (low, high) => {
+        this.config.lowNote = low;
+        this.config.highNote = high;
+        this.config.numNotes = Math.max(1, countNotesInRange(this.config.scale, low, high));
+      },
+    );
+    this.pianoKeyboard.update(dt);
+
+    // Update perf stats
+    this.perfOverlay.update(
+      this.animEngine.getNumDots(),
+      this.particleSystem.getActiveCount(),
+    );
+  };
+
+  private update(dt: number): void {
+    const w = getWidth();
+    const h = getHeight();
+    let triggers: TriggerEvent[] = [];
+
+    if (this.isPlaying) {
+      triggers = this.animEngine.update(
+        dt, this.config, this.renderConfig.colorScheme.name, true, w, h,
+      );
+
+      // Play triggered notes
+      if (this.audioStarted && this.config.soundEnabled) {
+        for (const t of triggers) {
+          this.audioEngine.playNoteByMidi(t.midiNote, t.velocity);
+          this.pianoKeyboard.noteOn(t.midiNote);
+          this.audioReactive.noteOn(t.midiNote, t.velocity);
+        }
+      }
+    } else {
+      this.animEngine.updatePositionsOnly(this.config, this.renderConfig.colorScheme.name, w, h);
+    }
+
+    const dots = this.animEngine.getDotStates();
+
+    // Update trails
+    if (this.isPlaying) {
+      this.trailRenderer.update(dt, dots);
+    }
+
+    // Emit burst particles on trigger
+    if (this.renderConfig.particle.emitOnTrigger) {
+      for (const t of triggers) {
+        const dot = dots[t.dotIndex]!;
+        this.particleSystem.emitBurst(
+          dot.position[0], dot.position[1],
+          dot.velocity[0], dot.velocity[1],
+          dot, this.renderConfig.particle,
+        );
+      }
+    }
+
+    // Emit trail particles (when trail mode is 'particle')
+    if (this.renderConfig.trail.mode === 'particle' && this.isPlaying) {
+      // Ensure accumulator array is sized
+      while (this.trailEmitAccum.length < dots.length) this.trailEmitAccum.push(0);
+      this.trailEmitAccum.length = dots.length;
+
+      const interval = 1 / Math.max(this.renderConfig.trail.particlesPerSecond, 1);
+      for (let i = 0; i < dots.length; i++) {
+        this.trailEmitAccum[i] = (this.trailEmitAccum[i] ?? 0) + dt;
+        while (this.trailEmitAccum[i]! >= interval) {
+          this.trailEmitAccum[i]! -= interval;
+          const dot = dots[i]!;
+          this.particleSystem.emitTrail(
+            dot.position[0], dot.position[1],
+            dot.velocity[0], dot.velocity[1],
+            dot, this.renderConfig.trail,
+          );
+        }
+      }
+    }
+
+    // Update particle physics
+    this.particleSystem.update(dt, this.renderConfig.particle);
+
+    // Update audio reactive data (EQ bands, trigger events for shaders)
+    this.audioReactive.update(dt);
+    this.audioReactive.updateTriggerEvents(dots, this.animEngine.getCurrentTime());
+  }
+
+  private draw(): void {
+    const gl = this.gl;
+    const w = getWidth();
+    const h = getHeight();
+    const bg = this.renderConfig.backgroundColor;
+
+    // Resize bloom FBOs if needed
+    this.bloomPass.resize(w, h);
+
+    // Render scene into bloom FBO (or directly to screen if bloom disabled)
+    if (this.bloomConfig.enabled) {
+      this.bloomPass.beginScene();
+    }
+
+    gl.viewport(0, 0, w, h);
+    gl.clearColor(bg[0], bg[1], bg[2], 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    const dots = this.animEngine.getDotStates();
+
+    // Draw order matches C++ RenderPipeline:
+    // 1. Background shader — renders into whatever FBO is currently bound
+    //    (bloom sceneFBO if bloom enabled, screen if not)
+    this.bgShaderManager.setActiveShader(this.config.backgroundShader);
+    if (this.bgShaderManager.isActive()) {
+      const sceneFbo = this.bloomConfig.enabled ? this.bloomPass.sceneFBO : null;
+      this.bgShaderManager.render(
+        dots, this.animEngine.getCurrentTime(), this.animEngine.getCycleProgress(),
+        this.renderConfig.backgroundColor, w, h,
+        sceneFbo, this.audioReactive,
+      );
+      // Re-bind the bloom FBO after background shader (it may have unbound it during sim passes)
+      if (sceneFbo) {
+        sceneFbo.bind();
+      }
+      // Restore blend state (background shader disables it for fullscreen quad passes)
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    }
+
+    // 2. Path lines (orbit guides + trigger markers)
+    this.pathLineRenderer.draw(
+      dots, this.config,
+      this.renderConfig.pathLine, this.renderConfig.triggerLine,
+      w, h,
+    );
+
+    // 3. Trail ribbons
+    this.trailRenderer.draw(
+      dots, this.renderConfig.trail, this.renderConfig.colorScheme,
+      w, h,
+    );
+
+    // 4. Particles
+    this.particleSystem.draw(w, h);
+
+    // 5. Dots (glow + core)
+    this.dotRenderer.draw(dots, this.renderConfig, w, h);
+
+    // 6. Bloom post-process
+    if (this.bloomConfig.enabled) {
+      this.bloomPass.apply(this.bloomConfig);
+    }
+  }
+
+  private onKeyDown(e: KeyboardEvent): void {
+    if (e.key === ' ') {
+      e.preventDefault();
+      this.togglePlay();
+    } else if (e.key === 'm' || e.key === 'M') {
+      this.config.soundEnabled = !this.config.soundEnabled;
+      this.showModeName(this.config.soundEnabled ? 'Sound: ON' : 'Sound: OFF');
+      this.updateTransport();
+    } else if (e.key === 'r' || e.key === 'R') {
+      this.randomizeMode();
+    } else if (e.key === 'p' || e.key === 'P') {
+      // Toggle burst particles on trigger
+      this.renderConfig.particle.emitOnTrigger = !this.renderConfig.particle.emitOnTrigger;
+      this.showModeName(this.renderConfig.particle.emitOnTrigger ? 'Particles: ON' : 'Particles: OFF');
+    } else if (e.key === 't' || e.key === 'T') {
+      // Cycle trail mode: ribbon → particle → none → ribbon
+      const modes = ['ribbon', 'particle', 'none'] as const;
+      const idx = modes.indexOf(this.renderConfig.trail.mode);
+      this.renderConfig.trail.mode = modes[(idx + 1) % modes.length]!;
+      this.showModeName('Trail: ' + this.renderConfig.trail.mode);
+    } else if (e.key === 'g' || e.key === 'G') {
+      // Toggle glow
+      this.renderConfig.dot.showGlow = !this.renderConfig.dot.showGlow;
+      this.showModeName(this.renderConfig.dot.showGlow ? 'Glow: ON' : 'Glow: OFF');
+    } else if (e.key === 'k' || e.key === 'K') {
+      this.pianoKeyboard.toggle();
+      this.updateTransport();
+    } else if (e.key === 'b' || e.key === 'B') {
+      this.bloomConfig.enabled = !this.bloomConfig.enabled;
+      this.showModeName(this.bloomConfig.enabled ? 'Bloom: ON' : 'Bloom: OFF');
+    } else if (e.key === 'o' || e.key === 'O') {
+      this.settingsOverlay.toggle();
+    }
+  }
+
+  private onMouseActivity(e?: MouseEvent): void {
+    if (this.settingsOverlay.isVisible()) return;
+
+    // Show edge tab on mouse movement
+    this.settingsButton.classList.add('visible');
+
+    // If mouse is near left edge, highlight the tab
+    if (e && e.clientX < 40) {
+      this.settingsButton.classList.add('near');
+    } else {
+      this.settingsButton.classList.remove('near');
+    }
+
+    clearTimeout(this.mouseIdleTimeout);
+    this.mouseIdleTimeout = window.setTimeout(() => {
+      if (!this.settingsOverlay.isVisible()) {
+        this.settingsButton.classList.remove('visible', 'near');
+      }
+    }, 2500);
+  }
+
+  private updateSettingsButtonVisibility(): void {
+    if (this.settingsOverlay.isVisible()) {
+      this.settingsButton.classList.remove('visible', 'near');
+    }
+  }
+
+  private injectEdgeTabStyles(): void {
+    if (document.getElementById('edge-tab-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'edge-tab-styles';
+    s.textContent = `
+.edge-tab {
+  position: fixed;
+  left: 0; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 56px;
+  background: rgba(255,255,255,0.06);
+  border: none;
+  border-radius: 0 8px 8px 0;
+  color: rgba(255,255,255,0.3);
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s, width 0.2s, background 0.2s, color 0.2s;
+  pointer-events: none;
+  padding: 0;
+}
+.edge-tab.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.edge-tab.near,
+.edge-tab:hover {
+  width: 28px;
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.7);
+}
+.edge-tab:active {
+  background: rgba(255,255,255,0.2);
+}
+`;
+    document.head.appendChild(s);
+  }
+
+  private updateTransport(): void {
+    this.transportBar.update({
+      isPlaying: this.isPlaying,
+      soundEnabled: this.config.soundEnabled,
+      keyboardVisible: this.pianoKeyboard.isVisible(),
+      perfVisible: this.perfOverlay.isVisible(),
+    });
+    this.transportBar.setBottomOffset(this.pianoKeyboard.getHeight());
+  }
+
+  private async switchInstrument(key: string): Promise<void> {
+    this.config.instrument = key;
+    await this.ensureAudio();
+    await this.audioEngine.switchInstrument(key, this.config.lowNote, this.config.highNote);
+  }
+
+  private randomizeMode(): void {
+    const names = this.modeLoader.getModeNames();
+    if (names.length === 0) return;
+
+    let newMode: string;
+    if (names.length === 1) {
+      newMode = names[0]!;
+    } else {
+      do {
+        newMode = names[Math.floor(Math.random() * names.length)]!;
+      } while (newMode === this.config.animationMode);
+    }
+
+    this.config.animationMode = newMode;
+
+    const mode = this.modeLoader.getMode(newMode);
+    if (mode) {
+      this.config.modeParams = this.modeLoader.loadDefaultParams(mode);
+    }
+
+    // Reset trails for the new mode
+    this.trailRenderer.reset();
+
+    this.showModeName(newMode);
+  }
+
+  private showModeName(name: string): void {
+    this.modeLabel.textContent = name;
+    this.modeLabel.style.opacity = '1';
+
+    clearTimeout(this.modeLabelTimeout);
+    this.modeLabelTimeout = window.setTimeout(() => {
+      this.modeLabel.style.opacity = '0';
+    }, 2000);
+  }
+
+  dispose(): void {
+    cancelAnimationFrame(this.animFrameId);
+    this.dotRenderer.dispose();
+    this.pathLineRenderer.dispose();
+    this.trailRenderer.dispose();
+    this.particleSystem.dispose();
+    this.bloomPass.dispose();
+    this.bgShaderManager.dispose();
+    this.audioEngine.killAllVoices();
+    clearTimeout(this.modeLabelTimeout);
+    this.modeLabel.remove();
+  }
+}
