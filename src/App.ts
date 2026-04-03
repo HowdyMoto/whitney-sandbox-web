@@ -587,13 +587,30 @@ export class App {
   }
 
   private showModeName(name: string): void {
-    this.modeLabel.textContent = name;
+    // Clear any pending animation
+    clearTimeout(this.modeLabelTimeout);
+    this.modeLabel.innerHTML = '';
     this.modeLabel.style.opacity = '1';
 
-    clearTimeout(this.modeLabelTimeout);
+    // Create a span per character and reveal them sequentially
+    const spans: HTMLSpanElement[] = [];
+    for (const ch of name) {
+      const span = document.createElement('span');
+      span.textContent = ch;
+      span.style.opacity = '0';
+      span.style.transition = 'opacity 0.15s';
+      this.modeLabel.appendChild(span);
+      spans.push(span);
+    }
+
+    const delay = Math.min(40, 400 / Math.max(name.length, 1));
+    for (let i = 0; i < spans.length; i++) {
+      setTimeout(() => { spans[i]!.style.opacity = '1'; }, i * delay);
+    }
+
     this.modeLabelTimeout = window.setTimeout(() => {
       this.modeLabel.style.opacity = '0';
-    }, 2000);
+    }, 2000 + spans.length * delay);
   }
 
   dispose(): void {

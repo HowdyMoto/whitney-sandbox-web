@@ -26,6 +26,8 @@ export class TransportBar {
   private root: HTMLDivElement;
   private buttons: Map<string, HTMLButtonElement> = new Map();
   private mouseIdleTimeout = 0;
+  private tooltipEl: HTMLDivElement;
+  private tooltipTimers: number[] = [];
 
   constructor(callbacks: TransportCallbacks) {
     this.root = document.createElement('div');
@@ -46,6 +48,7 @@ export class TransportBar {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         def.cb();
+        this.dismissTooltip();
       });
       this.buttons.set(def.id, btn);
       this.root.appendChild(btn);
@@ -62,11 +65,18 @@ export class TransportBar {
     this.buttons.get('keyboard')!.classList.add('off');
     this.buttons.get('perf')!.classList.add('off');
 
+    // Tooltip element
+    this.tooltipEl = document.createElement('div');
+    this.tooltipEl.className = 'transport-tooltip';
+    document.body.appendChild(this.tooltipEl);
+
     document.body.appendChild(this.root);
     this.injectStyles();
 
     window.addEventListener('mousemove', () => this.onMouseActivity());
     window.addEventListener('touchstart', () => this.onMouseActivity(), { passive: true });
+
+    this.showOnboardingHints();
   }
 
   update(state: TransportState): void {
@@ -79,6 +89,47 @@ export class TransportBar {
 
   setBottomOffset(px: number): void {
     this.root.style.bottom = `${20 + px}px`;
+  }
+
+  private showOnboardingHints(): void {
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    // Show play hint immediately
+    this.showTooltipOn('play', isMobile ? 'Tap to play' : 'Press Space or click to play');
+
+    // After a delay, show randomize hint
+    this.tooltipTimers.push(window.setTimeout(() => {
+      this.showTooltipOn('randomize', isMobile
+        ? 'Tap to randomize \u2022 Two-finger tap anywhere'
+        : 'Press R or right-click to randomize');
+    }, 6000));
+
+    // Auto-dismiss all hints after a while
+    this.tooltipTimers.push(window.setTimeout(() => {
+      this.dismissTooltip();
+    }, 12000));
+  }
+
+  private showTooltipOn(buttonId: string, text: string): void {
+    const btn = this.buttons.get(buttonId);
+    if (!btn) return;
+
+    // Make transport visible while showing tooltip
+    this.root.classList.add('visible');
+
+    this.tooltipEl.textContent = text;
+    this.tooltipEl.classList.add('visible');
+
+    // Position above the button
+    const rect = btn.getBoundingClientRect();
+    this.tooltipEl.style.left = `${rect.left + rect.width / 2}px`;
+    this.tooltipEl.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+  }
+
+  private dismissTooltip(): void {
+    this.tooltipEl.classList.remove('visible');
+    for (const t of this.tooltipTimers) clearTimeout(t);
+    this.tooltipTimers.length = 0;
   }
 
   private onMouseActivity(): void {
@@ -150,6 +201,30 @@ export class TransportBar {
 }
 .transport-btn.off:hover img {
   opacity: 0.5;
+}
+
+.transport-tooltip {
+  position: fixed;
+  left: 0; bottom: 0;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #e6e6e6;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 41;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.transport-tooltip.visible {
+  opacity: 1;
 }
 `;
     document.head.appendChild(s);
