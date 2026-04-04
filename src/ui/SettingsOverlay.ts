@@ -729,11 +729,11 @@ export class SettingsOverlay {
   position: fixed;
   top: 0; left: 0; bottom: 0;
   width: 340px;
-  background: rgba(18, 18, 28, 0.92);
+  background: rgba(20, 20, 20, 0.94);
   backdrop-filter: blur(16px);
-  color: #e6e6e6;
+  color: #f0f0f0;
   font-family: 'Outfit', system-ui, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   z-index: 50;
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -763,8 +763,8 @@ export class SettingsOverlay {
   flex-shrink: 0;
 }
 .settings-tab {
-  background: none; border: none; color: #aaa;
-  padding: 6px 12px; font-size: 12px; cursor: pointer;
+  background: none; border: none; color: #bbb;
+  padding: 6px 12px; font-size: 13px; cursor: pointer;
   border-bottom: 2px solid transparent;
   font-family: inherit; letter-spacing: 0.5px;
   text-transform: uppercase; font-weight: 500;
@@ -780,7 +780,7 @@ export class SettingsOverlay {
 .settings-content::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
 .settings-section-header {
-  color: #aaa; font-size: 11px; text-transform: uppercase;
+  color: #bbb; font-size: 12px; text-transform: uppercase;
   letter-spacing: 1px; margin: 16px 0 6px; padding-top: 8px;
   border-top: 1px solid rgba(255,255,255,0.06);
   font-weight: 600;
@@ -791,14 +791,14 @@ export class SettingsOverlay {
   margin-bottom: 10px;
 }
 .settings-row > label {
-  display: block; color: #d0d0d0; font-size: 12px; margin-bottom: 3px;
+  display: block; color: #e0e0e0; font-size: 13px; margin-bottom: 3px;
 }
 .settings-row-header {
   display: flex; justify-content: space-between; align-items: baseline;
   margin-bottom: 3px;
 }
-.settings-row-header label { color: #d0d0d0; font-size: 12px; }
-.settings-value { color: #999; font-size: 11px; font-variant-numeric: tabular-nums; }
+.settings-row-header label { color: #e0e0e0; font-size: 13px; }
+.settings-value { color: #bbb; font-size: 12px; font-variant-numeric: tabular-nums; }
 
 .settings-row input[type="range"] {
   width: 100%; height: 18px; -webkit-appearance: none; appearance: none;
@@ -828,7 +828,7 @@ export class SettingsOverlay {
   outline: none;
 }
 .settings-row select:focus { border-color: rgba(255,255,255,0.3); }
-.settings-row select option, .settings-row select optgroup { background: #1a1a2a; color: #ddd; }
+.settings-row select option, .settings-row select optgroup { background: #1a1a1a; color: #ddd; }
 
 .settings-checkbox-row label {
   display: flex; align-items: center; gap: 6px;
