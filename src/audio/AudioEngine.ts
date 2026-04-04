@@ -33,6 +33,7 @@ export class AudioEngine {
     return this.totalToLoad > 0 ? this.loadedCount / this.totalToLoad : 1;
   }
   isLoading(): boolean { return this.loading; }
+  hasContext(): boolean { return this.ctx !== null; }
 
   // Must be called from a user gesture (click/keypress) to satisfy autoplay policy
   async ensureContext(): Promise<void> {

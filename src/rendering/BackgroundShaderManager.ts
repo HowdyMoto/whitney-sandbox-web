@@ -426,6 +426,24 @@ export class BackgroundShaderManager {
     map.set(uniform, value);
   }
 
+  getAllParams(): Record<string, Record<string, number>> {
+    const out: Record<string, Record<string, number>> = {};
+    for (const [shaderKey, map] of this.shaderParams) {
+      const obj: Record<string, number> = {};
+      for (const [uniform, value] of map) obj[uniform] = value;
+      out[shaderKey] = obj;
+    }
+    return out;
+  }
+
+  setAllParams(params: Record<string, Record<string, number>>): void {
+    for (const [shaderKey, uniforms] of Object.entries(params)) {
+      for (const [uniform, value] of Object.entries(uniforms)) {
+        this.setParam(shaderKey, uniform, value);
+      }
+    }
+  }
+
   // ─── Rendering ──────────────────────────────────────────────────
 
   render(

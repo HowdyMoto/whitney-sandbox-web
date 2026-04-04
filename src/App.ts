@@ -18,6 +18,7 @@ import { countNotesInRange, getAllScales } from './music/ScaleSystem.js';
 import { getAllInstruments } from './audio/InstrumentLibrary.js';
 import { defaultConfig, defaultRenderConfig } from './types.js';
 import type { Config, RenderConfig, TriggerEvent } from './types.js';
+import { takeSnapshot, applySnapshot, saveCurrentState, loadCurrentState } from './Presets.js';
 
 export class App {
   private gl: WebGL2RenderingContext;
@@ -51,6 +52,7 @@ export class App {
   private modeLabelTimeout = 0;
   private settingsButton: HTMLButtonElement;
   private mouseIdleTimeout = 0;
+  private saveTimeout = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.gl = initWebGL(canvas);
@@ -101,6 +103,12 @@ export class App {
     });
     document.body.appendChild(this.settingsButton);
     this.injectEdgeTabStyles();
+
+    // Warm up AudioContext on first user interaction (mobile autoplay policy)
+    const warmAudio = () => this.warmAudioContext();
+    window.addEventListener('click', warmAudio, { once: true });
+    window.addEventListener('touchstart', warmAudio, { once: true, passive: true });
+    window.addEventListener('keydown', warmAudio, { once: true });
 
     // Mouse movement shows the edge tab, idle hides it
     window.addEventListener('mousemove', (e) => this.onMouseActivity(e));
@@ -153,16 +161,23 @@ export class App {
       this.animEngine.setModeLoader(this.modeLoader);
       this.pathLineRenderer.setModeLoader(this.modeLoader);
 
-      const mode = this.modeLoader.getMode(this.config.animationMode);
-      if (mode) {
-        this.config.modeParams = this.modeLoader.loadDefaultParams(mode);
+      // Restore saved state or use defaults
+      const saved = loadCurrentState();
+      if (saved) {
+        applySnapshot(saved, this.config, this.renderConfig, this.bloomConfig,
+          (p) => this.bgShaderManager.setAllParams(p));
+      } else {
+        const mode = this.modeLoader.getMode(this.config.animationMode);
+        if (mode) {
+          this.config.modeParams = this.modeLoader.loadDefaultParams(mode);
+        }
       }
 
       // Bind settings overlay to live config objects
       this.settingsOverlay.bind(
         this.config, this.renderConfig, this.bloomConfig,
         this.modeLoader, this.bgShaderManager,
-        () => { /* onChange — configs are mutated in place */ },
+        () => { this.scheduleAutoSave(); },
         (key) => this.switchInstrument(key),
         () => this.updateSettingsButtonVisibility(),
       );
@@ -188,6 +203,12 @@ export class App {
     await this.audioEngine.switchInstrument(
       this.config.instrument, this.config.lowNote, this.config.highNote,
     );
+  }
+
+  /** Warm up AudioContext on any user gesture so it's ready for playback */
+  private warmAudioContext(): void {
+    if (this.audioEngine.hasContext()) return;
+    this.audioEngine.ensureContext();
   }
 
   private loop = (): void => {
@@ -390,6 +411,7 @@ export class App {
     } else if (e.key === 'o' || e.key === 'O') {
       this.settingsOverlay.toggle();
     }
+    this.scheduleAutoSave();
   }
 
   private onMouseActivity(e?: MouseEvent): void {
@@ -583,6 +605,7 @@ export class App {
     // Reset trails and show the new mode name
     this.trailRenderer.reset();
     this.settingsOverlay.rebuild();
+    this.scheduleAutoSave();
     this.showModeName(c.animationMode);
   }
 
@@ -611,6 +634,16 @@ export class App {
     this.modeLabelTimeout = window.setTimeout(() => {
       this.modeLabel.style.opacity = '0';
     }, 2000 + spans.length * delay);
+  }
+
+  private scheduleAutoSave(): void {
+    clearTimeout(this.saveTimeout);
+    this.saveTimeout = window.setTimeout(() => {
+      saveCurrentState(takeSnapshot(
+        this.config, this.renderConfig, this.bloomConfig,
+        () => this.bgShaderManager.getAllParams(),
+      ));
+    }, 500);
   }
 
   dispose(): void {

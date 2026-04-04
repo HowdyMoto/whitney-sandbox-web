@@ -4,6 +4,7 @@ import { getAllScales, midiToNoteName, countNotesInRange } from '../music/ScaleS
 import { getAllInstruments } from '../audio/InstrumentLibrary.js';
 import type { CustomModeLoader } from '../animation/CustomModeLoader.js';
 import type { BackgroundShaderManager } from '../rendering/BackgroundShaderManager.js';
+import { takeSnapshot, applySnapshot, savePreset, deletePreset, getPresets } from '../Presets.js';
 
 // ─── Color scheme display names ─────────────────────────────────
 const COLOR_SCHEMES: { key: string; label: string }[] = [
@@ -19,7 +20,7 @@ const COLOR_SCHEMES: { key: string; label: string }[] = [
   { key: 'forest', label: 'Moss & Fern' },
 ];
 
-type TabName = 'music' | 'motion' | 'style' | 'background';
+type TabName = 'music' | 'motion' | 'style' | 'background' | 'presets';
 
 export class SettingsOverlay {
   private root: HTMLDivElement;
@@ -90,6 +91,7 @@ export class SettingsOverlay {
       case 'motion': this.buildMotionTab(); break;
       case 'style': this.buildStyleTab(); break;
       case 'background': this.buildBackgroundTab(); break;
+      case 'presets': this.buildPresetsTab(); break;
     }
   }
 
@@ -111,6 +113,7 @@ export class SettingsOverlay {
       { key: 'motion', label: 'Motion' },
       { key: 'style', label: 'Style' },
       { key: 'background', label: 'BG' },
+      { key: 'presets', label: 'Presets' },
     ];
     for (const t of tabs) {
       const btn = document.createElement('button');
@@ -352,6 +355,84 @@ export class SettingsOverlay {
             );
           }
         }
+      }
+    }
+  }
+
+  // ─── Presets Tab ──────────────────────────────────────────────
+
+  private buildPresetsTab(): void {
+    // Save new preset
+    this.addSectionHeader('Save Current Settings');
+    const saveRow = document.createElement('div');
+    saveRow.className = 'settings-row';
+    saveRow.style.display = 'flex';
+    saveRow.style.gap = '6px';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'Preset name...';
+    nameInput.className = 'preset-name-input';
+    nameInput.style.flex = '1';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'preset-action-btn';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (!name) return;
+      const snapshot = takeSnapshot(
+        this.config, this.renderConfig, this.bloomConfig,
+        () => this.bgShaderManager?.getAllParams() ?? {},
+      );
+      savePreset(name, snapshot);
+      nameInput.value = '';
+      this.rebuild();
+    });
+
+    saveRow.appendChild(nameInput);
+    saveRow.appendChild(saveBtn);
+    this.tabContent.appendChild(saveRow);
+
+    // List saved presets
+    const presets = getPresets();
+    if (presets.length > 0) {
+      this.addSectionHeader('Saved Presets');
+      for (const preset of presets) {
+        const row = document.createElement('div');
+        row.className = 'settings-row preset-row';
+
+        const label = document.createElement('span');
+        label.className = 'preset-label';
+        label.textContent = preset.name;
+
+        const loadBtn = document.createElement('button');
+        loadBtn.className = 'preset-action-btn';
+        loadBtn.textContent = 'Load';
+        loadBtn.addEventListener('click', () => {
+          applySnapshot(
+            preset.snapshot,
+            this.config, this.renderConfig, this.bloomConfig,
+            (p) => this.bgShaderManager?.setAllParams(p),
+          );
+          this.changed();
+          this.onInstrumentChange?.(this.config.instrument);
+          this.rebuild();
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'preset-action-btn preset-delete-btn';
+        delBtn.textContent = '\u00d7';
+        delBtn.title = 'Delete';
+        delBtn.addEventListener('click', () => {
+          deletePreset(preset.name);
+          this.rebuild();
+        });
+
+        row.appendChild(label);
+        row.appendChild(loadBtn);
+        row.appendChild(delBtn);
+        this.tabContent.appendChild(row);
       }
     }
   }
@@ -754,6 +835,54 @@ export class SettingsOverlay {
 .settings-checkbox-row input[type="checkbox"] {
   width: 15px; height: 15px; accent-color: #888;
   cursor: pointer;
+}
+
+.preset-name-input {
+  padding: 5px 8px;
+  background: rgba(255,255,255,0.08);
+  color: #ddd;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.preset-name-input:focus { border-color: rgba(255,255,255,0.3); }
+.preset-name-input::placeholder { color: #666; }
+
+.preset-action-btn {
+  padding: 5px 12px;
+  background: rgba(255,255,255,0.1);
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.preset-action-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+.preset-delete-btn {
+  padding: 5px 8px;
+  color: #888;
+  font-size: 16px;
+  line-height: 1;
+}
+.preset-delete-btn:hover { color: #f66; }
+
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.preset-label {
+  flex: 1;
+  color: #ccc;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 `;
     document.head.appendChild(style);
