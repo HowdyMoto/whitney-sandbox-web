@@ -79,8 +79,13 @@ export class TransportBar {
     document.body.appendChild(this.root);
     this.injectStyles();
 
-    window.addEventListener('mousemove', () => this.onMouseActivity());
-    window.addEventListener('touchstart', () => this.onMouseActivity(), { passive: true });
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isMobile) {
+      // Always visible on touch devices — no hover to reveal it
+      this.root.classList.add('visible', 'persistent');
+    } else {
+      window.addEventListener('mousemove', () => this.onMouseActivity());
+    }
 
     this.showOnboardingHints();
   }
@@ -186,6 +191,13 @@ export class TransportBar {
 .transport-bar.visible {
   opacity: 1;
   pointer-events: auto;
+}
+.transport-bar.persistent {
+  opacity: 0.7;
+  pointer-events: auto;
+}
+.transport-bar.persistent:active {
+  opacity: 1;
 }
 
 .transport-btn {
