@@ -609,9 +609,13 @@ export class App {
     this.showModeName(c.animationMode);
   }
 
+  private modeLabelTimers: number[] = [];
+
   private showModeName(name: string): void {
-    // Clear any pending animation
+    // Clear any pending animations
     clearTimeout(this.modeLabelTimeout);
+    for (const t of this.modeLabelTimers) clearTimeout(t);
+    this.modeLabelTimers.length = 0;
     this.modeLabel.innerHTML = '';
     this.modeLabel.style.opacity = '1';
 
@@ -620,20 +624,39 @@ export class App {
     for (const ch of name) {
       const span = document.createElement('span');
       span.textContent = ch;
+      span.style.display = 'inline-block';
       span.style.opacity = '0';
-      span.style.transition = 'opacity 0.15s';
+      span.style.transform = 'translateY(8px) scale(0.7)';
+      span.style.transition = 'opacity 0.18s, transform 0.18s cubic-bezier(0.34, 1.3, 0.64, 1)';
+      if (ch === ' ') span.style.width = '0.3em';
       this.modeLabel.appendChild(span);
       spans.push(span);
     }
 
     const delay = Math.min(40, 400 / Math.max(name.length, 1));
+
+    // Roll in
     for (let i = 0; i < spans.length; i++) {
-      setTimeout(() => { spans[i]!.style.opacity = '1'; }, i * delay);
+      this.modeLabelTimers.push(setTimeout(() => {
+        spans[i]!.style.opacity = '1';
+        spans[i]!.style.transform = 'translateY(0) scale(1)';
+      }, i * delay));
     }
 
+    // Roll out (reverse order)
+    const rollOutStart = 2000 + spans.length * delay;
+    for (let i = 0; i < spans.length; i++) {
+      const ri = spans.length - 1 - i; // reverse index
+      this.modeLabelTimers.push(setTimeout(() => {
+        spans[ri]!.style.opacity = '0';
+        spans[ri]!.style.transform = 'translateY(-8px) scale(0.7)';
+      }, rollOutStart + i * delay));
+    }
+
+    // Hide container after roll-out completes
     this.modeLabelTimeout = window.setTimeout(() => {
       this.modeLabel.style.opacity = '0';
-    }, 2000 + spans.length * delay);
+    }, rollOutStart + spans.length * delay + 200);
   }
 
   private scheduleAutoSave(): void {

@@ -117,13 +117,26 @@ export class TransportBar {
     // Make transport visible while showing tooltip
     this.root.classList.add('visible');
 
-    this.tooltipEl.textContent = text;
-    this.tooltipEl.classList.add('visible');
+    // Collapse current tooltip first if visible, then show new one
+    this.tooltipEl.classList.remove('visible');
 
-    // Position above the button
-    const rect = btn.getBoundingClientRect();
-    this.tooltipEl.style.left = `${rect.left + rect.width / 2}px`;
-    this.tooltipEl.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+    // Small delay so the collapse transition can start before repositioning
+    requestAnimationFrame(() => {
+      this.tooltipEl.textContent = text;
+
+      // Position above the button, anchored to its center
+      const rect = btn.getBoundingClientRect();
+      const left = rect.left + rect.width / 2;
+      const bottom = window.innerHeight - rect.top + 12;
+      this.tooltipEl.style.left = `${left}px`;
+      this.tooltipEl.style.bottom = `${bottom}px`;
+      // Scale from the bottom center (where the arrow points)
+      this.tooltipEl.style.transformOrigin = 'center bottom';
+
+      // Force reflow so the browser sees the collapsed state before expanding
+      void this.tooltipEl.offsetHeight;
+      this.tooltipEl.classList.add('visible');
+    });
   }
 
   private dismissTooltip(): void {
@@ -206,24 +219,34 @@ export class TransportBar {
 .transport-tooltip {
   position: fixed;
   left: 0; bottom: 0;
-  transform: translateX(-50%);
-  padding: 7px 14px;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #e6e6e6;
+  transform: translateX(-50%) scale(0);
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.95);
+  color: #1a1a2a;
   font-family: 'Outfit', system-ui, sans-serif;
   font-size: 13px;
-  font-weight: 400;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
+  font-weight: 500;
+  border-radius: 10px;
   white-space: nowrap;
   pointer-events: none;
   z-index: 41;
   opacity: 0;
-  transition: opacity 0.3s;
+  transform-origin: center bottom;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.15);
+}
+.transport-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px; height: 7px;
+  background: rgba(255,255,255,0.95);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 .transport-tooltip.visible {
+  transform: translateX(-50%) scale(1);
   opacity: 1;
 }
 `;
