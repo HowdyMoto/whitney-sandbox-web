@@ -763,7 +763,7 @@ export class SettingsOverlay {
   flex-shrink: 0;
 }
 .settings-tab {
-  background: none; border: none; color: #888;
+  background: none; border: none; color: #aaa;
   padding: 6px 12px; font-size: 12px; cursor: pointer;
   border-bottom: 2px solid transparent;
   font-family: inherit; letter-spacing: 0.5px;
@@ -780,7 +780,7 @@ export class SettingsOverlay {
 .settings-content::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
 .settings-section-header {
-  color: #888; font-size: 11px; text-transform: uppercase;
+  color: #aaa; font-size: 11px; text-transform: uppercase;
   letter-spacing: 1px; margin: 16px 0 6px; padding-top: 8px;
   border-top: 1px solid rgba(255,255,255,0.06);
   font-weight: 600;
@@ -791,14 +791,14 @@ export class SettingsOverlay {
   margin-bottom: 10px;
 }
 .settings-row > label {
-  display: block; color: #aaa; font-size: 12px; margin-bottom: 3px;
+  display: block; color: #d0d0d0; font-size: 12px; margin-bottom: 3px;
 }
 .settings-row-header {
   display: flex; justify-content: space-between; align-items: baseline;
   margin-bottom: 3px;
 }
-.settings-row-header label { color: #aaa; font-size: 12px; }
-.settings-value { color: #666; font-size: 11px; font-variant-numeric: tabular-nums; }
+.settings-row-header label { color: #d0d0d0; font-size: 12px; }
+.settings-value { color: #999; font-size: 11px; font-variant-numeric: tabular-nums; }
 
 .settings-row input[type="range"] {
   width: 100%; height: 18px; -webkit-appearance: none; appearance: none;

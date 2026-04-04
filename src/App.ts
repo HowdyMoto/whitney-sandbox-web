@@ -497,19 +497,21 @@ export class App {
     this.transportBar.setBottomOffset(this.pianoKeyboard.getHeight());
   }
 
-  private async toggleMidi(): Promise<void> {
+  private toggleMidi(): void {
     if (this.midiOutput.isEnabled()) {
       this.midiOutput.disable();
       this.showModeName('MIDI: OFF');
+      this.updateTransport();
     } else {
-      const ok = await this.midiOutput.enable();
-      if (ok) {
-        this.showModeName('MIDI: ' + this.midiOutput.getOutputName());
-      } else {
-        this.showModeName('MIDI: Not Available');
-      }
+      this.midiOutput.enable().then(ok => {
+        if (ok) {
+          this.showModeName('MIDI: ' + this.midiOutput.getOutputName());
+        } else {
+          this.showModeName('MIDI: Not Available');
+        }
+        this.updateTransport();
+      });
     }
-    this.updateTransport();
   }
 
   private async switchInstrument(key: string): Promise<void> {
