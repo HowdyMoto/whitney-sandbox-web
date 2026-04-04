@@ -741,6 +741,8 @@ export class SettingsOverlay {
   flex-direction: column;
   box-shadow: 4px 0 24px rgba(0,0,0,0.5);
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .settings-overlay.open {
   transform: translateX(0);
@@ -846,6 +848,8 @@ export class SettingsOverlay {
   font-size: 13px;
   font-family: inherit;
   outline: none;
+  user-select: text;
+  -webkit-user-select: text;
 }
 .preset-name-input:focus { border-color: rgba(255,255,255,0.3); }
 .preset-name-input::placeholder { color: #666; }

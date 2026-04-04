@@ -19,6 +19,7 @@ import { getAllInstruments } from './audio/InstrumentLibrary.js';
 import { defaultConfig, defaultRenderConfig } from './types.js';
 import type { Config, RenderConfig, TriggerEvent } from './types.js';
 import { takeSnapshot, applySnapshot, saveCurrentState, loadCurrentState } from './Presets.js';
+import { MidiOutput } from './audio/MidiOutput.js';
 
 export class App {
   private gl: WebGL2RenderingContext;
@@ -37,6 +38,7 @@ export class App {
   private bloomConfig: BloomConfig;
   private bgShaderManager: BackgroundShaderManager;
   private audioReactive: AudioReactiveData;
+  private midiOutput: MidiOutput;
   private config: Config;
   private renderConfig: RenderConfig;
   private isPlaying = false;
@@ -65,11 +67,13 @@ export class App {
     this.audioEngine = new AudioEngine();
     this.settingsOverlay = new SettingsOverlay();
     this.pianoKeyboard = new PianoKeyboard();
+    this.midiOutput = new MidiOutput();
     this.transportBar = new TransportBar({
       onPlayPause: () => { this.togglePlay(); },
       onMute: () => { this.config.soundEnabled = !this.config.soundEnabled; this.updateTransport(); },
       onKeyboard: () => { this.pianoKeyboard.toggle(); this.updateTransport(); },
       onRandomize: () => this.randomizeMode(),
+      onMidi: () => { this.toggleMidi(); },
       onPerfToggle: () => { this.perfOverlay.toggle(); this.updateTransport(); },
     });
     this.perfOverlay = new PerfOverlay();
@@ -254,12 +258,13 @@ export class App {
       );
 
       // Play triggered notes
-      if (this.audioStarted && this.config.soundEnabled) {
-        for (const t of triggers) {
+      for (const t of triggers) {
+        if (this.audioStarted && this.config.soundEnabled) {
           this.audioEngine.playNoteByMidi(t.midiNote, t.velocity);
-          this.pianoKeyboard.noteOn(t.midiNote);
-          this.audioReactive.noteOn(t.midiNote, t.velocity);
         }
+        this.midiOutput.sendNoteOn(t.midiNote, t.velocity);
+        this.pianoKeyboard.noteOn(t.midiNote);
+        this.audioReactive.noteOn(t.midiNote, t.velocity);
       }
     } else {
       this.animEngine.updatePositionsOnly(this.config, this.renderConfig.colorScheme.name, w, h);
@@ -485,9 +490,26 @@ export class App {
       isPlaying: this.isPlaying,
       soundEnabled: this.config.soundEnabled,
       keyboardVisible: this.pianoKeyboard.isVisible(),
+      midiEnabled: this.midiOutput.isEnabled(),
+      midiSupported: this.midiOutput.isSupported(),
       perfVisible: this.perfOverlay.isVisible(),
     });
     this.transportBar.setBottomOffset(this.pianoKeyboard.getHeight());
+  }
+
+  private async toggleMidi(): Promise<void> {
+    if (this.midiOutput.isEnabled()) {
+      this.midiOutput.disable();
+      this.showModeName('MIDI: OFF');
+    } else {
+      const ok = await this.midiOutput.enable();
+      if (ok) {
+        this.showModeName('MIDI: ' + this.midiOutput.getOutputName());
+      } else {
+        this.showModeName('MIDI: Not Available');
+      }
+    }
+    this.updateTransport();
   }
 
   private async switchInstrument(key: string): Promise<void> {

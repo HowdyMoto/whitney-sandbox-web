@@ -12,6 +12,7 @@ export interface TransportCallbacks {
   onMute: () => void;
   onKeyboard: () => void;
   onRandomize: () => void;
+  onMidi: () => void;
   onPerfToggle: () => void;
 }
 
@@ -19,6 +20,8 @@ export interface TransportState {
   isPlaying: boolean;
   soundEnabled: boolean;
   keyboardVisible: boolean;
+  midiEnabled: boolean;
+  midiSupported: boolean;
   perfVisible: boolean;
 }
 
@@ -38,6 +41,7 @@ export class TransportBar {
       { id: 'mute',      tooltip: 'Mute (M)',             cb: callbacks.onMute },
       { id: 'keyboard',  tooltip: 'Piano Keyboard (K)',   cb: callbacks.onKeyboard },
       { id: 'randomize', tooltip: 'Randomize (R)',        cb: callbacks.onRandomize },
+      { id: 'midi',      tooltip: 'MIDI Output',          cb: callbacks.onMidi },
       { id: 'perf',      tooltip: 'Performance Stats',    cb: callbacks.onPerfToggle },
     ];
 
@@ -59,10 +63,12 @@ export class TransportBar {
     this.buttons.get('mute')!.innerHTML = icon('speaker');
     this.buttons.get('keyboard')!.innerHTML = icon('keyboard');
     this.buttons.get('randomize')!.innerHTML = icon('dice');
+    this.buttons.get('midi')!.innerHTML = icon('midi');
     this.buttons.get('perf')!.innerHTML = icon('info');
 
-    // Keyboard and perf start off
+    // Keyboard, midi, and perf start off
     this.buttons.get('keyboard')!.classList.add('off');
+    this.buttons.get('midi')!.classList.add('off');
     this.buttons.get('perf')!.classList.add('off');
 
     // Tooltip element
@@ -84,6 +90,8 @@ export class TransportBar {
     this.buttons.get('play')!.classList.toggle('off', !state.isPlaying);
     this.buttons.get('mute')!.classList.toggle('off', !state.soundEnabled);
     this.buttons.get('keyboard')!.classList.toggle('off', !state.keyboardVisible);
+    this.buttons.get('midi')!.classList.toggle('off', !state.midiEnabled);
+    this.buttons.get('midi')!.style.display = state.midiSupported ? '' : 'none';
     this.buttons.get('perf')!.classList.toggle('off', !state.perfVisible);
   }
 
@@ -100,7 +108,7 @@ export class TransportBar {
     // After a delay, show randomize hint
     this.tooltipTimers.push(window.setTimeout(() => {
       this.showTooltipOn('randomize', isMobile
-        ? 'Tap to randomize \u2022 Two-finger tap anywhere'
+        ? 'Tap to randomize, Press R, or 2-finger tap anywhere'
         : 'Press R or right-click to randomize');
     }, 6000));
 
