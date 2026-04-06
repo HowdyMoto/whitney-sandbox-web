@@ -1,6 +1,7 @@
 export class SplashModal {
   private root: HTMLDivElement;
   private onDismiss: (() => void) | null = null;
+  private onWarmAudio: (() => void) | null = null;
   private animationFrameId = 0;
 
   constructor() {
@@ -21,7 +22,11 @@ export class SplashModal {
     `;
 
     const btn = this.root.querySelector('.splash-button') as HTMLButtonElement;
-    btn.addEventListener('click', () => this.dismiss());
+    btn.addEventListener('click', () => {
+      // Warm audio on button click before dismissing
+      if (this.onWarmAudio) this.onWarmAudio();
+      this.dismiss();
+    });
     this.root.addEventListener('click', (e) => {
       // Allow clicking anywhere on the modal to dismiss
       if (e.target === this.root) this.dismiss();
@@ -34,6 +39,10 @@ export class SplashModal {
 
   onDismissed(callback: () => void): void {
     this.onDismiss = callback;
+  }
+
+  setWarmAudioCallback(callback: () => void): void {
+    this.onWarmAudio = callback;
   }
 
   private startOrbitAnimation(): void {
