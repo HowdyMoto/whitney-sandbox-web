@@ -49,15 +49,27 @@ export class TransportBar {
     for (const def of btnDefs) {
       const btn = document.createElement('button');
       btn.className = 'transport-btn';
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
+
+      const handleClick = () => {
         // Warm audio on play button click (mobile requires this on click, not just touchstart)
         if (def.id === 'play' && callbacks.onWarmAudio) {
           callbacks.onWarmAudio();
         }
         def.cb();
         this.dismissTooltip();
+      };
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleClick();
       });
+
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleClick();
+      });
+
       btn.addEventListener('mouseenter', () => {
         this.showTooltipOn(def.id, def.tooltip);
       });
