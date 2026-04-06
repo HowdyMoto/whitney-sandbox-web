@@ -62,17 +62,19 @@ export class SplashModal {
     const dotRadius = 4;
 
     const animate = () => {
-      // Get button position relative to canvas on each frame
+      // Get button's computed dimensions
       const btnRect = button.getBoundingClientRect();
-      const canvasRect = canvas.getBoundingClientRect();
+      const btnWidth = btnRect.width;
+      const btnHeight = btnRect.height;
 
-      const padding = 2; // Padding to keep dots visible
-      const left = btnRect.left - canvasRect.left + padding;
-      const top = btnRect.top - canvasRect.top + padding;
-      const right = left + btnRect.width - 2 * padding;
-      const bottom = top + btnRect.height - 2 * padding;
-      const btnWidth = btnRect.width - 2 * padding;
-      const btnHeight = btnRect.height - 2 * padding;
+      // Center button in canvas
+      const canvasCenterX = canvas.width / 2;
+      const canvasCenterY = canvas.height / 2;
+      const left = canvasCenterX - btnWidth / 2;
+      const top = canvasCenterY - btnHeight / 2;
+      const right = left + btnWidth;
+      const bottom = top + btnHeight;
+
       const perimeter = 2 * (btnWidth + btnHeight);
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -100,10 +102,6 @@ export class SplashModal {
           x = left;
           y = bottom - (distance - 2 * btnWidth - btnHeight);
         }
-
-        // Clamp to canvas bounds
-        x = Math.max(dotRadius, Math.min(canvas.width - dotRadius, x));
-        y = Math.max(dotRadius, Math.min(canvas.height - dotRadius, y));
 
         ctx.fillStyle = dot.color;
         ctx.beginPath();
