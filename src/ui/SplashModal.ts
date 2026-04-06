@@ -38,20 +38,11 @@ export class SplashModal {
 
   private startOrbitAnimation(): void {
     const canvas = this.root.querySelector('#orbit-canvas') as HTMLCanvasElement;
-    if (!canvas) return;
+    const button = this.root.querySelector('.splash-button') as HTMLButtonElement;
+    if (!canvas || !button) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    // Define button border in canvas coordinates
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const btnWidth = 80;
-    const btnHeight = 36;
-    const left = centerX - btnWidth / 2;
-    const top = centerY - btnHeight / 2;
-    const right = left + btnWidth;
-    const bottom = top + btnHeight;
 
     // Colorful palette
     const colors = [
@@ -68,36 +59,46 @@ export class SplashModal {
       t: (i / colors.length),
     }));
 
-    // Total perimeter length
-    const perimeter = 2 * (btnWidth + btnHeight);
-
-    // Get position along rectangle edge (t = 0 to 1)
-    const getPositionOnRect = (t: number) => {
-      const distance = (t % 1) * perimeter;
-
-      if (distance < btnWidth) {
-        // Top edge: left to right
-        return { x: left + distance, y: top };
-      } else if (distance < btnWidth + btnHeight) {
-        // Right edge: top to bottom
-        return { x: right, y: top + (distance - btnWidth) };
-      } else if (distance < 2 * btnWidth + btnHeight) {
-        // Bottom edge: right to left
-        return { x: right - (distance - btnWidth - btnHeight), y: bottom };
-      } else {
-        // Left edge: bottom to top
-        return { x: left, y: bottom - (distance - 2 * btnWidth - btnHeight) };
-      }
-    };
-
     const dotRadius = 4;
 
     const animate = () => {
+      // Get button position relative to canvas on each frame
+      const btnRect = button.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+
+      const left = btnRect.left - canvasRect.left;
+      const top = btnRect.top - canvasRect.top;
+      const right = left + btnRect.width;
+      const bottom = top + btnRect.height;
+      const btnWidth = btnRect.width;
+      const btnHeight = btnRect.height;
+      const perimeter = 2 * (btnWidth + btnHeight);
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       for (const dot of dots) {
         dot.t += dot.speed / perimeter;
-        const { x, y } = getPositionOnRect(dot.t);
+        const t = dot.t % 1;
+        const distance = t * perimeter;
+
+        let x, y;
+        if (distance < btnWidth) {
+          // Top edge: left to right
+          x = left + distance;
+          y = top;
+        } else if (distance < btnWidth + btnHeight) {
+          // Right edge: top to bottom
+          x = right;
+          y = top + (distance - btnWidth);
+        } else if (distance < 2 * btnWidth + btnHeight) {
+          // Bottom edge: right to left
+          x = right - (distance - btnWidth - btnHeight);
+          y = bottom;
+        } else {
+          // Left edge: bottom to top
+          x = left;
+          y = bottom - (distance - 2 * btnWidth - btnHeight);
+        }
 
         ctx.fillStyle = dot.color;
         ctx.beginPath();
