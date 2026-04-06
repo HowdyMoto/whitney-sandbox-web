@@ -205,10 +205,12 @@ export class App {
   }
 
   private async togglePlay(): Promise<void> {
-    this.isPlaying = !this.isPlaying;
-    if (this.isPlaying) {
+    if (!this.isPlaying) {
+      // Starting playback - ensure audio is ready FIRST
       await this.ensureAudio();
     }
+    // Only toggle after audio is ready
+    this.isPlaying = !this.isPlaying;
     this.updateTransport();
   }
 
