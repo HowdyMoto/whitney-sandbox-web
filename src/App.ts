@@ -210,9 +210,11 @@ export class App {
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
   }
 
-  private togglePlay(): void {
+  private async togglePlay(): Promise<void> {
     this.isPlaying = !this.isPlaying;
-    if (this.isPlaying) this.ensureAudio();
+    if (this.isPlaying) {
+      await this.ensureAudio();
+    }
     this.updateTransport();
   }
 
