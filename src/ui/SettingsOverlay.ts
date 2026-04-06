@@ -196,17 +196,19 @@ export class SettingsOverlay {
         this.rebuild(); // rebuild to show new mode params
       });
 
-    // Rotation
-    const rotations: { value: RotationDirection; label: string }[] = [
-      { value: 'clockwise', label: 'Clockwise' },
-      { value: 'counterclockwise', label: 'Counter-clockwise' },
-      { value: 'alternating', label: 'Alternating' },
-      { value: 'pingpong', label: 'Ping Pong' },
-    ];
-    this.addSelect('Rotation', rotations, c.rotationDirection, v => { c.rotationDirection = v as RotationDirection; this.changed(); });
-
     // Mode-specific parameters
     const mode = this.modeLoader?.getMode(c.animationMode);
+
+    // Rotation (only for modes that support it)
+    if (mode?.supportsRotation) {
+      const rotations: { value: RotationDirection; label: string }[] = [
+        { value: 'clockwise', label: 'Clockwise' },
+        { value: 'counterclockwise', label: 'Counter-clockwise' },
+        { value: 'alternating', label: 'Alternating' },
+        { value: 'pingpong', label: 'Ping Pong' },
+      ];
+      this.addSelect('Rotation', rotations, c.rotationDirection, v => { c.rotationDirection = v as RotationDirection; this.changed(); });
+    }
     if (mode) {
       for (const p of mode.paramDefs) {
         const val = c.modeParams[p.name] ?? p.defaultVal;
