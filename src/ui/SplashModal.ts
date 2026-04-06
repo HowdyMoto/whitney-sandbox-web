@@ -7,6 +7,7 @@ export class SplashModal {
   constructor() {
     this.root = document.createElement('div');
     this.root.className = 'splash-modal';
+    const version = __APP_VERSION__;
     this.root.innerHTML = `
       <div class="splash-content">
         <h1>Whitney Music Sandbox</h1>
@@ -14,7 +15,7 @@ export class SplashModal {
         <p class="credit">
           Inspired by Jim Bumgardner's <a href="https://www.whitneymusicbox.org" target="_blank" rel="noopener noreferrer">Whitney Music Box</a>
         </p>
-        <p class="version">v${__APP_VERSION__}</p>
+        <p class="version">v${version}</p>
         <div class="button-container">
           <canvas id="orbit-canvas" width="140" height="100"></canvas>
           <button class="splash-button">Start</button>
