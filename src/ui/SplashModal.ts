@@ -38,22 +38,22 @@ export class SplashModal {
 
   private startOrbitAnimation(): void {
     const canvas = this.root.querySelector('#orbit-canvas') as HTMLCanvasElement;
-    const button = this.root.querySelector('.splash-button') as HTMLButtonElement;
-    if (!canvas || !button) return;
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Get button dimensions relative to canvas
-    const buttonRect = button.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-    const offsetX = buttonRect.left - canvasRect.left;
-    const offsetY = buttonRect.top - canvasRect.top;
-    const btnWidth = buttonRect.width;
-    const btnHeight = buttonRect.height;
-    const padding = 8;
+    // Define button border in canvas coordinates
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const btnWidth = 80;
+    const btnHeight = 36;
+    const left = centerX - btnWidth / 2;
+    const top = centerY - btnHeight / 2;
+    const right = left + btnWidth;
+    const bottom = top + btnHeight;
 
-    // Colorful gradient palette matching the app
+    // Colorful palette
     const colors = [
       'rgba(168, 230, 255, 0.9)',  // cyan
       'rgba(255, 135, 210, 0.9)',  // pink
@@ -64,50 +64,40 @@ export class SplashModal {
 
     const dots = colors.map((color, i) => ({
       color,
-      speed: 0.3 + (i * 0.1), // Different speeds around the perimeter
-      progress: (i / colors.length) * 100, // Starting positions spread around edge
+      speed: 0.3 + (i * 0.15),
+      t: (i / colors.length),
     }));
 
-    // Calculate perimeter path
+    // Total perimeter length
     const perimeter = 2 * (btnWidth + btnHeight);
 
-    // Function to get x, y position along button border
-    const getPositionOnBorder = (progressPercent: number) => {
-      const distance = (progressPercent / 100) * perimeter;
-      let x = offsetX + padding;
-      let y = offsetY + padding;
+    // Get position along rectangle edge (t = 0 to 1)
+    const getPositionOnRect = (t: number) => {
+      const distance = (t % 1) * perimeter;
 
       if (distance < btnWidth) {
-        // Top edge
-        x = offsetX + padding + distance;
-        y = offsetY + padding;
+        // Top edge: left to right
+        return { x: left + distance, y: top };
       } else if (distance < btnWidth + btnHeight) {
-        // Right edge
-        x = offsetX + btnWidth - padding;
-        y = offsetY + padding + (distance - btnWidth);
+        // Right edge: top to bottom
+        return { x: right, y: top + (distance - btnWidth) };
       } else if (distance < 2 * btnWidth + btnHeight) {
-        // Bottom edge
-        x = offsetX + btnWidth - padding - (distance - btnWidth - btnHeight);
-        y = offsetY + btnHeight - padding;
+        // Bottom edge: right to left
+        return { x: right - (distance - btnWidth - btnHeight), y: bottom };
       } else {
-        // Left edge
-        x = offsetX + padding;
-        y = offsetY + btnHeight - padding - (distance - 2 * btnWidth - btnHeight);
+        // Left edge: bottom to top
+        return { x: left, y: bottom - (distance - 2 * btnWidth - btnHeight) };
       }
-
-      return { x, y };
     };
 
-    const dotRadius = 5;
+    const dotRadius = 4;
 
     const animate = () => {
-      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Update and draw dots
       for (const dot of dots) {
-        dot.progress = (dot.progress + dot.speed) % 100;
-        const { x, y } = getPositionOnBorder(dot.progress);
+        dot.t += dot.speed / perimeter;
+        const { x, y } = getPositionOnRect(dot.t);
 
         ctx.fillStyle = dot.color;
         ctx.beginPath();
