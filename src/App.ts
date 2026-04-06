@@ -217,9 +217,9 @@ export class App {
   }
 
   /** Warm up AudioContext on any user gesture so it's ready for playback */
-  private warmAudioContext(): void {
+  private async warmAudioContext(): Promise<void> {
     if (this.audioEngine.hasContext()) return;
-    this.audioEngine.ensureContext();
+    await this.audioEngine.ensureContext();
   }
 
   private loop = (): void => {

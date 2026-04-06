@@ -1,7 +1,7 @@
 export class SplashModal {
   private root: HTMLDivElement;
   private onDismiss: (() => void) | null = null;
-  private onWarmAudio: (() => void) | null = null;
+  private onWarmAudio: (() => Promise<void>) | null = null;
   private animationFrameId = 0;
 
   constructor() {
@@ -22,9 +22,9 @@ export class SplashModal {
     `;
 
     const btn = this.root.querySelector('.splash-button') as HTMLButtonElement;
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       // Warm audio on button click before dismissing
-      if (this.onWarmAudio) this.onWarmAudio();
+      if (this.onWarmAudio) await this.onWarmAudio();
       this.dismiss();
     });
     this.root.addEventListener('click', (e) => {
@@ -41,7 +41,7 @@ export class SplashModal {
     this.onDismiss = callback;
   }
 
-  setWarmAudioCallback(callback: () => void): void {
+  setWarmAudioCallback(callback: () => Promise<void>): void {
     this.onWarmAudio = callback;
   }
 
@@ -127,6 +127,7 @@ export class SplashModal {
   private dismiss(): void {
     cancelAnimationFrame(this.animationFrameId);
     this.root.classList.add('dismissing');
+    // Wait 300ms for audio context to initialize before removing modal
     setTimeout(() => {
       this.root.remove();
       this.onDismiss?.();
