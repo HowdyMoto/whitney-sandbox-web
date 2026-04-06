@@ -14,7 +14,7 @@ export class SplashModal {
           Inspired by Jim Bumgardner's <a href="https://www.whitneymusicbox.org" target="_blank" rel="noopener noreferrer">Whitney Music Box</a>
         </p>
         <div class="button-container">
-          <canvas id="orbit-canvas" width="120" height="120"></canvas>
+          <canvas id="orbit-canvas" width="140" height="100"></canvas>
           <button class="splash-button">Start</button>
         </div>
       </div>
@@ -184,8 +184,8 @@ export class SplashModal {
 
 .button-container {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 100px;
   margin: 0 auto;
   display: flex;
   align-items: center;
