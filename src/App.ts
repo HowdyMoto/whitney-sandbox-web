@@ -10,6 +10,7 @@ import { SettingsOverlay } from './ui/SettingsOverlay.js';
 import { TransportBar } from './ui/TransportBar.js';
 import { PerfOverlay } from './ui/PerfOverlay.js';
 import { PianoKeyboard } from './ui/PianoKeyboard.js';
+import { SplashModal } from './ui/SplashModal.js';
 import { BloomPass, defaultBloomConfig } from './rendering/BloomPass.js';
 import type { BloomConfig } from './rendering/BloomPass.js';
 import { BackgroundShaderManager } from './rendering/BackgroundShaderManager.js';
@@ -57,6 +58,10 @@ export class App {
   private saveTimeout = 0;
 
   constructor(canvas: HTMLCanvasElement) {
+    // Show splash modal on startup — dismissing it warms the audio context
+    const splash = new SplashModal();
+    splash.onDismissed(() => this.warmAudioContext());
+
     this.gl = initWebGL(canvas);
     this.dotRenderer = new DotRenderer(this.gl);
     this.pathLineRenderer = new PathLineRenderer(this.gl);
