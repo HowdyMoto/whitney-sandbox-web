@@ -7,7 +7,7 @@ x = "cx + amplitude * sin(pi() * localT) * cos(t * two_pi())"
 y = "cy - amplitude * sin(pi() * localT) * sin(t * two_pi())"
 
 [trigger]
-value = "fmod(cycleProgress * speed, 1.0)"
+value = "localT"
 
 [marker.1]
 x = "cx + maxRadius * 0.05 * cos(t * two_pi())"

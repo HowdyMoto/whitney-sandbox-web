@@ -8,7 +8,7 @@ x = "screenW * 0.08 + t * screenW * 0.84"
 y = "screenH * 0.98 - max(0, 1 - 4 * (localT - 0.5) * (localT - 0.5)) * screenH * 0.96"
 
 [trigger]
-value = "fmod(cycleProgress * speed, 1.0)"
+value = "localT"
 
 [marker.1]
 x = "screenW * 0.08 + t * screenW * 0.84"

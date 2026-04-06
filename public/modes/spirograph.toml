@@ -14,7 +14,7 @@ x = "cx - ((amplitude * 1.03 - amplitude * 1.03 / petals) * sin(phase - pi()/2) 
 y = "cy - ((amplitude * 1.03 - amplitude * 1.03 / petals) * cos(phase - pi()/2) + amplitude * 1.03 / petals * 0.85 * cos((petals - 1) * (phase - pi()/2)))"
 
 [trigger]
-value = "fmod(cycleProgress * speed, 1.0)"
+value = "fmod(phase, two_pi()) / two_pi()"
 
 [marker.1]
 x = "cx + amplitude * cos(pi() / 2)"

@@ -13,7 +13,7 @@ x = "cx + amplitude * pow(sin(pi() * localT), pulseShape) * cos(t * two_pi())"
 y = "cy - amplitude * pow(sin(pi() * localT), pulseShape) * sin(t * two_pi())"
 
 [trigger]
-value = "fmod(cycleProgress * speed, 1.0)"
+value = "localT"
 
 [marker.1]
 x = "cx"
