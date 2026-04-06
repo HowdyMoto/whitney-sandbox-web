@@ -13,6 +13,7 @@ const MIDI_LOW = 21;  // A0
 const MIDI_HIGH = 108; // C8
 const BLACK_KEY_SEMITONES = new Set([1, 3, 6, 8, 10]);
 const MIN_NOTE_GAP = 12; // one octave minimum range
+const MIN_WHITE_KEY_WIDTH = 16; // minimum width in pixels to prevent squishing
 
 export class PianoKeyboard {
   private root: HTMLDivElement;
@@ -145,7 +146,9 @@ export class PianoKeyboard {
       if (!BLACK_KEY_SEMITONES.has(m % 12)) whiteCount++;
     }
 
-    const maxW = Math.min(w, 1400 * dpr);
+    // Ensure keys don't get squished on narrow screens
+    const minTotalW = whiteCount * MIN_WHITE_KEY_WIDTH * dpr;
+    const maxW = Math.max(Math.min(w, 1400 * dpr), minTotalW);
     const offsetX = (w - maxW) / 2;
     const whiteKeyW = maxW / whiteCount;
     const blackKeyW = whiteKeyW * 0.62;
@@ -360,6 +363,8 @@ export class PianoKeyboard {
   background: rgba(10, 10, 16, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 .piano-keyboard.visible {
   transform: translateY(0);
