@@ -122,8 +122,6 @@ export class SplashModal {
 
   private dismiss(): void {
     cancelAnimationFrame(this.animationFrameId);
-    this.root.classList.add('dismissing');
-    // Remove immediately - no waiting
     this.root.remove();
     this.onDismiss?.();
   }
@@ -222,6 +220,7 @@ export class SplashModal {
   text-decoration: none;
   border-bottom: 1px solid rgba(168, 230, 255, 0.4);
   transition: color 0.2s, border-color 0.2s;
+  touch-action: manipulation;
 }
 
 .splash-content a:hover {
@@ -242,6 +241,7 @@ export class SplashModal {
   transition: all 0.3s;
   font-family: 'Outfit', system-ui, sans-serif;
   text-transform: uppercase;
+  touch-action: manipulation;
 }
 
 .splash-button:hover {
