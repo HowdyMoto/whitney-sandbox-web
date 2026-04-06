@@ -66,12 +66,13 @@ export class SplashModal {
       const btnRect = button.getBoundingClientRect();
       const canvasRect = canvas.getBoundingClientRect();
 
-      const left = btnRect.left - canvasRect.left;
-      const top = btnRect.top - canvasRect.top;
-      const right = left + btnRect.width;
-      const bottom = top + btnRect.height;
-      const btnWidth = btnRect.width;
-      const btnHeight = btnRect.height;
+      const padding = 2; // Padding to keep dots visible
+      const left = btnRect.left - canvasRect.left + padding;
+      const top = btnRect.top - canvasRect.top + padding;
+      const right = left + btnRect.width - 2 * padding;
+      const bottom = top + btnRect.height - 2 * padding;
+      const btnWidth = btnRect.width - 2 * padding;
+      const btnHeight = btnRect.height - 2 * padding;
       const perimeter = 2 * (btnWidth + btnHeight);
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
