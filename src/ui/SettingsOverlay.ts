@@ -281,6 +281,7 @@ export class SettingsOverlay {
     }
 
     if (rc.trail.mode === 'particle') {
+      this.addSlider('Emission Rate', rc.trail.particlesPerSecond, 1, 200, 1, v => { rc.trail.particlesPerSecond = v; this.changed(); }, v => `${v.toFixed(0)}/s`);
       this.addSlider('Particle Size', rc.trail.particleSize, 0.5, 10, 0.5, v => { rc.trail.particleSize = v; this.changed(); });
       this.addSlider('Lifetime', rc.trail.particleLifetime, 0.1, 3, 0.1, v => { rc.trail.particleLifetime = v; this.changed(); }, v => `${v.toFixed(1)}s`);
       this.addSlider('Spread', rc.trail.particleSpread, 0, 360, 1, v => { rc.trail.particleSpread = v; this.changed(); }, v => `${v.toFixed(0)}\u00b0`);
