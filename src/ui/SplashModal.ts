@@ -7,11 +7,10 @@ export class SplashModal {
     this.root.className = 'splash-modal';
     this.root.innerHTML = `
       <div class="splash-content">
-        <h1>Whitney Music Box</h1>
-        <p class="subtitle">An experimental musical animation</p>
+        <h1>Whitney Music Sandbox</h1>
+        <p class="subtitle">A celebration of musical and mathematical harmony</p>
         <p class="credit">
-          Inspired by <a href="https://www.whitneymusicbox.org" target="_blank" rel="noopener noreferrer">Whitney Music Box</a>
-          by Jim Bumgardner
+          Inspired by Jim Bumgardner's <a href="https://www.whitneymusicbox.org" target="_blank" rel="noopener noreferrer">Whitney Music Box</a>
         </p>
         <button class="splash-button">Start</button>
       </div>
