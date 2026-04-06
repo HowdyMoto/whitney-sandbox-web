@@ -24,7 +24,11 @@ export class SplashModal {
     const btn = this.root.querySelector('.splash-button') as HTMLButtonElement;
     btn.addEventListener('click', async () => {
       // Warm audio on button click before dismissing
-      if (this.onWarmAudio) await this.onWarmAudio();
+      if (this.onWarmAudio) {
+        await this.onWarmAudio();
+        // Give audio context extra time to fully initialize
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
       this.dismiss();
     });
     this.root.addEventListener('click', (e) => {
