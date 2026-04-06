@@ -14,7 +14,7 @@ x = "cx + amplitude * cos(petals * (phase - pi()/2)) * cos(phase)"
 y = "cy - amplitude * cos(petals * (phase - pi()/2)) * sin(phase)"
 
 [trigger]
-value = "min(fmod(phase - pi()/2 + two_pi(), two_pi()), fmod(pi()/2 - phase + two_pi(), two_pi())) / (pi() * 0.5)"
+value = "pow(cos(phase - pi()/2), 2)"
 
 [marker.1]
 x = "cx + amplitude * cos(pi() / 2)"
