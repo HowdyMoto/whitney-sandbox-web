@@ -58,3 +58,4 @@ Pushes to `master` auto-deploy to the web server via a GitHub Actions workflow t
 - WebGL2 with custom fragment shaders
 - Web Audio API with polyphonic voice management (64 voices)
 - TOML-based animation mode definitions with expression evaluation
+# CI fix attempt
