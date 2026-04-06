@@ -225,6 +225,8 @@ export class App {
   private async warmAudioContext(): Promise<void> {
     if (this.audioEngine.hasContext()) return;
     await this.audioEngine.ensureContext();
+    // Play silent audio to fully wake up mobile audio context
+    this.audioEngine.playNoteByMidi(60, 0.001);
   }
 
   private loop = (): void => {
