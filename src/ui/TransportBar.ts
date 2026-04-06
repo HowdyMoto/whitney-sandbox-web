@@ -51,6 +51,10 @@ export class TransportBar {
       btn.className = 'transport-btn';
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+        // Warm audio on play button click (mobile requires this on click, not just touchstart)
+        if (def.id === 'play' && callbacks.onWarmAudio) {
+          callbacks.onWarmAudio();
+        }
         def.cb();
         this.dismissTooltip();
       });
@@ -60,10 +64,6 @@ export class TransportBar {
       btn.addEventListener('mouseleave', () => {
         this.dismissTooltip();
       });
-      // On mobile, warm audio on first tap of play button
-      if (def.id === 'play' && callbacks.onWarmAudio) {
-        btn.addEventListener('touchstart', callbacks.onWarmAudio, { once: true, passive: true });
-      }
       this.buttons.set(def.id, btn);
       this.root.appendChild(btn);
     }
