@@ -387,6 +387,7 @@ export class App {
     if (e.key === ' ') {
       e.preventDefault();
       this.togglePlay();
+      this.transportBar.dismissTooltip();
     } else if (e.key === 'm' || e.key === 'M') {
       this.config.soundEnabled = !this.config.soundEnabled;
       this.showModeName(this.config.soundEnabled ? 'Sound: ON' : 'Sound: OFF');

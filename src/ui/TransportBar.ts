@@ -39,19 +39,24 @@ export class TransportBar {
     const btnDefs: { id: string; tooltip: string; cb: () => void }[] = [
       { id: 'play',      tooltip: 'Play / Pause (Space)', cb: callbacks.onPlayPause },
       { id: 'mute',      tooltip: 'Mute (M)',             cb: callbacks.onMute },
-      { id: 'keyboard',  tooltip: 'Piano Keyboard (K)',   cb: callbacks.onKeyboard },
+      { id: 'keyboard',  tooltip: 'Toggle piano keyboard (K)',   cb: callbacks.onKeyboard },
       { id: 'randomize', tooltip: 'Randomize (R)',        cb: callbacks.onRandomize },
-      { id: 'midi',      tooltip: 'MIDI Output',          cb: callbacks.onMidi },
-      { id: 'perf',      tooltip: 'Performance Stats',    cb: callbacks.onPerfToggle },
+      { id: 'midi',      tooltip: 'MIDI output',          cb: callbacks.onMidi },
+      { id: 'perf',      tooltip: 'Performance stats',    cb: callbacks.onPerfToggle },
     ];
 
     for (const def of btnDefs) {
       const btn = document.createElement('button');
       btn.className = 'transport-btn';
-      btn.title = def.tooltip;
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         def.cb();
+        this.dismissTooltip();
+      });
+      btn.addEventListener('mouseenter', () => {
+        this.showTooltipOn(def.id, def.tooltip);
+      });
+      btn.addEventListener('mouseleave', () => {
         this.dismissTooltip();
       });
       this.buttons.set(def.id, btn);
@@ -80,9 +85,11 @@ export class TransportBar {
     this.injectStyles();
 
     const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // Start visible on all devices
+    this.root.classList.add('visible');
     if (isMobile) {
       // Always visible on touch devices — no hover to reveal it
-      this.root.classList.add('visible', 'persistent');
+      this.root.classList.add('persistent');
     } else {
       window.addEventListener('mousemove', () => this.onMouseActivity());
     }
@@ -107,15 +114,17 @@ export class TransportBar {
   private showOnboardingHints(): void {
     const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-    // Show play hint immediately
-    this.showTooltipOn('play', isMobile ? 'Tap to play' : 'Press Space or click to play');
+    // Show play hint after 1 second
+    this.tooltipTimers.push(window.setTimeout(() => {
+      this.showTooltipOn('play', 'Play / Pause (Space)');
+    }, 1000));
 
     // After a delay, show randomize hint
     this.tooltipTimers.push(window.setTimeout(() => {
       this.showTooltipOn('randomize', isMobile
         ? 'Tap to randomize, Press R, or 2-finger tap anywhere'
         : 'Press R or right-click to randomize');
-    }, 6000));
+    }, 10000));
 
     // Auto-dismiss all hints after a while
     this.tooltipTimers.push(window.setTimeout(() => {
@@ -152,7 +161,7 @@ export class TransportBar {
     });
   }
 
-  private dismissTooltip(): void {
+  dismissTooltip(): void {
     this.tooltipEl.classList.remove('visible');
     for (const t of this.tooltipTimers) clearTimeout(t);
     this.tooltipTimers.length = 0;
