@@ -243,11 +243,6 @@ export class PathLineRenderer {
       }
 
       for (let j = 0; j < markers.length; j++) {
-        // Check if this marker position has an actual trigger
-        const trigVal = this.modeLoader.evalTriggerValue(mode, this.ctx);
-        const hasVisualTrigger = (trigVal < 0.005) || (trigVal > 0.995);
-        if (!hasVisualTrigger) continue; // Skip markers without triggers
-
         const markerAnim = (j === closestIdx) ? anim : 0;
         const radius = markerRadius * (1 + markerAnim * 0.5);
         const pulseT = Math.min(markerAnim * triggerConfig.pulseBrightness, 1);
