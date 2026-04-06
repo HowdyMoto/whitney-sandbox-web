@@ -24,13 +24,29 @@ export class SplashModal {
 
     const btn = this.root.querySelector('.splash-button') as HTMLButtonElement;
 
-    btn.addEventListener('click', () => {
-      this.dismiss();
+    const handleDismiss = () => this.dismiss();
+    btn.addEventListener('click', handleDismiss);
+    btn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      handleDismiss();
     });
 
     this.root.addEventListener('click', (e) => {
       if (e.target === this.root) this.dismiss();
     });
+
+    // Ensure links work on first tap by handling touchend
+    const link = this.root.querySelector('a') as HTMLAnchorElement;
+    if (link) {
+      link.addEventListener('touchend', (e) => {
+        // Allow normal link behavior but prevent delay
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        if (href) {
+          window.open(href, link.getAttribute('target') || '_self');
+        }
+      });
+    }
 
     document.body.appendChild(this.root);
     this.injectStyles();
