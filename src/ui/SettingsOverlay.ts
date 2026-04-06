@@ -376,6 +376,7 @@ export class SettingsOverlay {
     nameInput.placeholder = 'Preset name...';
     nameInput.className = 'preset-name-input';
     nameInput.style.flex = '1';
+    nameInput.addEventListener('keydown', (e) => e.stopPropagation());
 
     const saveBtn = document.createElement('button');
     saveBtn.className = 'preset-action-btn';
