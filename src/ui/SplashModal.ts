@@ -10,7 +10,7 @@ export class SplashModal {
     this.root.innerHTML = `
       <div class="splash-content">
         <h1>Whitney Music Sandbox</h1>
-        <p class="subtitle">For the love of musical and mathematical harmony</p>
+        <p class="subtitle">Musical & mathematical harmony</p>
         <p class="credit">
           Inspired by Jim Bumgardner's <a href="https://www.whitneymusicbox.org" target="_blank" rel="noopener noreferrer">Whitney Music Box</a>
         </p>
@@ -123,13 +123,9 @@ export class SplashModal {
   private dismiss(): void {
     cancelAnimationFrame(this.animationFrameId);
     this.root.classList.add('dismissing');
-    // Immediately disable pointer events so clicks/taps go through
-    this.root.style.pointerEvents = 'none';
-    // Wait 300ms for fade animation before removing from DOM
-    setTimeout(() => {
-      this.root.remove();
-      this.onDismiss?.();
-    }, 300);
+    // Remove immediately - no waiting
+    this.root.remove();
+    this.onDismiss?.();
   }
 
   private injectStyles(): void {
