@@ -101,6 +101,10 @@ export class SplashModal {
           y = bottom - (distance - 2 * btnWidth - btnHeight);
         }
 
+        // Clamp to canvas bounds
+        x = Math.max(dotRadius, Math.min(canvas.width - dotRadius, x));
+        y = Math.max(dotRadius, Math.min(canvas.height - dotRadius, y));
+
         ctx.fillStyle = dot.color;
         ctx.beginPath();
         ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
