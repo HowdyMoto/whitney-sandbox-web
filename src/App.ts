@@ -58,16 +58,12 @@ export class App {
   private saveTimeout = 0;
 
   constructor(canvas: HTMLCanvasElement) {
-    // Show splash modal on startup — clicking start warms the audio context
+    // Show splash modal on startup
     const splash = new SplashModal();
-    splash.setWarmAudioCallback(async () => {
-      await this.warmAudioContext();
-      // Pre-load default instrument samples while splash is showing
-      await this.audioEngine.switchInstrument(
-        this.config.instrument, this.config.lowNote, this.config.highNote,
-      );
+    splash.onDismissed(() => {
+      // Warm audio context after splash dismisses
+      this.warmAudioContext();
     });
-    splash.onDismissed(() => this.warmAudioContext());
 
     this.gl = initWebGL(canvas);
     this.dotRenderer = new DotRenderer(this.gl);
