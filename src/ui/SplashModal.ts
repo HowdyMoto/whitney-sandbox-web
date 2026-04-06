@@ -239,10 +239,13 @@ export class SplashModal {
 .splash-content .version {
   position: absolute;
   bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 11px;
   color: rgba(255, 255, 255, 0.3);
   letter-spacing: 0.5px;
   margin: 0;
+  white-space: nowrap;
 }
 
 .splash-content a {
