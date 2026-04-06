@@ -61,7 +61,9 @@ export class App {
     // Show splash modal on startup
     const splash = new SplashModal();
     splash.onDismissed(() => {
-      // No-op - let play button handle all audio initialization
+      // Immediately warm audio context when splash dismisses
+      // This ensures audio context is created in response to user gesture
+      this.audioEngine.ensureContext();
     });
 
     this.gl = initWebGL(canvas);
