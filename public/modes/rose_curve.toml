@@ -14,7 +14,7 @@ x = "cx + amplitude * cos(petals * (phase - pi()/2)) * cos(phase)"
 y = "cy - amplitude * cos(petals * (phase - pi()/2)) * sin(phase)"
 
 [trigger]
-value = "if(sin(phase) > 0, pow(cos(petals * (phase - pi()/2)) * sin(phase), 5), 0)"
+value = "pow(max(0, sin(phase)), 4)"
 
 [marker.1]
 x = "cx + amplitude * cos(pi() / 2)"
