@@ -56,7 +56,7 @@ export class SplashModal {
     const dots = colors.map((color, i) => ({
       color,
       speed: 0.3 + (i * 0.15),
-      t: (i / colors.length),
+      t: 0, // All start at the same position
     }));
 
     const dotRadius = 4;
