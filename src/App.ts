@@ -160,11 +160,11 @@ export class App {
 
     // Load background shaders
     const shaderFiles = [
-      'equalizer', 'fireworks', 'fluid', 'fractal_bloom',
+      'equalizer', 'fireworks', 'fractal_bloom',
       'impulse', 'kaleidoscope', 'neural_web', 'phosphor_trails',
       'sacred_geometry', 'spectrum', 'string_theory',
     ];
-    const displayShaders = ['equalizer_display', 'fireworks_display', 'fluid_display', 'phosphor_trails_display'];
+    const displayShaders = ['equalizer_display', 'fireworks_display', 'phosphor_trails_display'];
     const allShaderUrls = [
       ...shaderFiles.map(f => `${import.meta.env.BASE_URL}shaders/backgrounds/${f}.frag`),
       ...displayShaders.map(f => `${import.meta.env.BASE_URL}shaders/backgrounds/${f}.frag`),
