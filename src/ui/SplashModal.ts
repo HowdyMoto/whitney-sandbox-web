@@ -1,6 +1,7 @@
 export class SplashModal {
   private root: HTMLDivElement;
   private onDismiss: (() => void) | null = null;
+  private onInit: (() => Promise<void>) | null = null;
   private animationFrameId = 0;
 
   constructor() {
@@ -16,22 +17,36 @@ export class SplashModal {
         <div class="button-container">
           <canvas id="orbit-canvas" width="140" height="100"></canvas>
           <button class="splash-button">Start</button>
+          <div class="splash-loading" style="display: none;">Loading...</div>
         </div>
       </div>
     `;
 
     const btn = this.root.querySelector('.splash-button') as HTMLButtonElement;
-    btn.addEventListener('click', () => {
+    const loading = this.root.querySelector('.splash-loading') as HTMLDivElement;
+
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      loading.style.display = 'block';
+      // Run initialization (warm audio, load samples)
+      if (this.onInit) {
+        await this.onInit();
+      }
       this.dismiss();
     });
+
     this.root.addEventListener('click', (e) => {
-      // Allow clicking anywhere on the modal to dismiss
-      if (e.target === this.root) this.dismiss();
+      // Allow clicking anywhere on the modal to dismiss (but only if not loading)
+      if (e.target === this.root && !btn.disabled) this.dismiss();
     });
 
     document.body.appendChild(this.root);
     this.injectStyles();
     this.startOrbitAnimation();
+  }
+
+  setInitCallback(callback: () => Promise<void>): void {
+    this.onInit = callback;
   }
 
   onDismissed(callback: () => void): void {
@@ -200,6 +215,23 @@ export class SplashModal {
   top: 0;
   left: 0;
   pointer-events: none;
+}
+
+.splash-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-family: 'Outfit', system-ui, sans-serif;
+  letter-spacing: 2px;
+  pointer-events: none;
+}
+
+.splash-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .splash-content a {
