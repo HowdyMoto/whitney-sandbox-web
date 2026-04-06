@@ -8,10 +8,14 @@ x = "screenW * 0.02 + (1 - abs(fmod(cycleProgress * speed * 2, 2) - 1)) * screen
 y = "screenH * 0.08 + t * screenH * 0.84"
 
 [trigger]
-value = "fmod(cycleProgress * speed, 1.0)"
+value = "fmod(cycleProgress * speed * 2, 1.0)"
 
 [marker.1]
 x = "screenW * 0.02"
+y = "screenH * 0.08 + t * screenH * 0.84"
+
+[marker.2]
+x = "screenW * 0.98"
 y = "screenH * 0.08 + t * screenH * 0.84"
 
 [path]

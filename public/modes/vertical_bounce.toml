@@ -14,6 +14,10 @@ value = "fmod(cycleProgress * speed * 2, 1.0)"
 x = "screenW * 0.08 + t * screenW * 0.84"
 y = "screenH * 0.02"
 
+[marker.2]
+x = "screenW * 0.08 + t * screenW * 0.84"
+y = "screenH * 0.98"
+
 [path]
 x = "screenW * 0.08 + t * screenW * 0.84"
 y = "screenH * 0.02 + sweep * screenH * 0.96"
