@@ -7,7 +7,7 @@ x = "cx + amplitude * cos(phase)"
 y = "cy - amplitude * sin(phase)"
 
 [trigger]
-value = "fmod(phase, two_pi()) / two_pi()"
+value = "fmod(phase - pi()/2 + two_pi(), two_pi()) / two_pi()"
 
 [marker.1]
 x = "cx + amplitude * cos(pi() / 2)"
