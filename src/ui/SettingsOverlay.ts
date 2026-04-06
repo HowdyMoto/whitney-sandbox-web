@@ -294,8 +294,8 @@ export class SettingsOverlay {
     if (rc.particle.emitOnTrigger) {
       this.addSlider('Burst Count', rc.particle.burstCount, 1, 50, 1, v => { rc.particle.burstCount = v; this.changed(); });
       this.addSlider('Speed', rc.particle.speed, 10, 300, 1, v => { rc.particle.speed = v; this.changed(); });
-      this.addSlider('Lifetime', rc.particle.lifetime, 0.1, 3, 0.1, v => { rc.particle.lifetime = v; this.changed(); }, v => `${v.toFixed(1)}s`);
-      this.addSlider('Size', rc.particle.size, 1, 20, 0.5, v => { rc.particle.size = v; this.changed(); });
+      this.addSlider('Lifetime', rc.particle.lifetime, 0.1, 10, 0.1, v => { rc.particle.lifetime = v; this.changed(); }, v => `${v.toFixed(1)}s`);
+      this.addSlider('Size', rc.particle.size, 1, 64, 0.5, v => { rc.particle.size = v; this.changed(); });
       this.addSlider('Gravity', rc.particle.gravity, 0, 5000, 50, v => { rc.particle.gravity = v; this.changed(); });
     }
 
