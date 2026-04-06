@@ -14,6 +14,7 @@ export class SplashModal {
         <p class="credit">
           Inspired by Jim Bumgardner's <a href="https://www.whitneymusicbox.org" target="_blank" rel="noopener noreferrer">Whitney Music Box</a>
         </p>
+        <p class="version">v${__APP_VERSION__}</p>
         <div class="button-container">
           <canvas id="orbit-canvas" width="140" height="100"></canvas>
           <button class="splash-button">Start</button>
@@ -167,6 +168,7 @@ export class SplashModal {
 }
 
 .splash-content {
+  position: relative;
   text-align: center;
   color: white;
   font-family: 'Outfit', system-ui, sans-serif;
@@ -232,6 +234,15 @@ export class SplashModal {
 .splash-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.splash-content .version {
+  position: absolute;
+  bottom: 20px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.5px;
+  margin: 0;
 }
 
 .splash-content a {

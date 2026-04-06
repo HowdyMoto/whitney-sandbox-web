@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import path from 'path';
 import type { Plugin } from 'vite';
+import { readFileSync } from 'fs';
 
 // Plugin to serve the native app's instrument samples during dev
 function serveInstruments(): Plugin {
@@ -29,9 +30,15 @@ function serveInstruments(): Plugin {
   };
 }
 
+// Read version from package.json
+const packageJson = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'));
+
 export default defineConfig({
   base: '/whitney/',
   plugins: [serveInstruments()],
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
   server: {
     fs: {
       allow: [

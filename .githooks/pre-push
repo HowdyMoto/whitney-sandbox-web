@@ -1,0 +1,8 @@
+#!/bin/bash
+# Auto-increment patch version before pushing
+
+npm version patch --no-git-tag-version
+
+git add package.json package-lock.json
+
+echo "Version bumped and staged for commit"
