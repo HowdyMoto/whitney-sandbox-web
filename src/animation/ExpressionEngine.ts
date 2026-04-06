@@ -1,31 +1,24 @@
-import { Parser, type Expression } from 'expr-eval';
+import { compile, evaluate } from 'mathjs';
 
-// Singleton parser with custom functions matching tinyexpr builtins
-const parser = new Parser();
-
-// Register custom functions that tinyexpr provides
-parser.functions.pi = function () { return Math.PI; };
-parser.functions.two_pi = function () { return Math.PI * 2; };
-parser.functions.fmod = function (a: number, b: number) {
-  // Match C fmod: result has same sign as a
-  return a - Math.floor(a / b) * b;
-};
-
-// tinyexpr's if(cond, then, else) — used in rainbow.toml
-// expr-eval has ternary (a ? b : c) but the TOML modes use if() function syntax
-parser.functions.if = function (cond: number, a: number, b: number) {
-  return cond ? a : b;
-};
+// Create shared scope with custom functions
+const createScope = (vars: Record<string, number> = {}) => ({
+  ...vars,
+  pi: () => Math.PI,
+  two_pi: () => Math.PI * 2,
+  fmod: (a: number, b: number) => a - Math.floor(a / b) * b,
+  if: (cond: number, a: number, b: number) => cond ? a : b,
+});
 
 export interface CompiledExpression {
-  expr: Expression;
+  exprStr: string;
 }
 
 export function compileExpression(exprStr: string): CompiledExpression | null {
   if (!exprStr) return null;
   try {
-    const expr = parser.parse(exprStr);
-    return { expr };
+    // Validate the expression can be parsed
+    compile(exprStr);
+    return { exprStr };
   } catch (e) {
     console.warn(`Failed to compile expression: "${exprStr}"`, e);
     return null;
@@ -33,14 +26,15 @@ export function compileExpression(exprStr: string): CompiledExpression | null {
 }
 
 export function evaluateExpression(compiled: CompiledExpression, vars: Record<string, number>): number {
-  return compiled.expr.evaluate(vars);
+  const scope = createScope(vars);
+  return evaluate(compiled.exprStr, scope) as number;
 }
 
 // Evaluate a simple constant expression (no variables)
 export function evaluateConstant(exprStr: string): number | null {
   try {
-    const expr = parser.parse(exprStr);
-    return expr.evaluate({});
+    const scope = createScope();
+    return evaluate(exprStr, scope) as number;
   } catch {
     return null;
   }
