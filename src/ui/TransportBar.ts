@@ -38,9 +38,9 @@ export class TransportBar {
 
     const btnDefs: { id: string; tooltip: string; cb: () => void }[] = [
       { id: 'play',      tooltip: 'Play / Pause (Space)', cb: callbacks.onPlayPause },
+      { id: 'randomize', tooltip: 'Randomize (R)',        cb: callbacks.onRandomize },
       { id: 'mute',      tooltip: 'Mute (M)',             cb: callbacks.onMute },
       { id: 'keyboard',  tooltip: 'Toggle piano keyboard (K)',   cb: callbacks.onKeyboard },
-      { id: 'randomize', tooltip: 'Randomize (R)',        cb: callbacks.onRandomize },
       { id: 'midi',      tooltip: 'MIDI output',          cb: callbacks.onMidi },
       { id: 'perf',      tooltip: 'Performance stats',    cb: callbacks.onPerfToggle },
     ];
@@ -129,7 +129,7 @@ export class TransportBar {
     // Auto-dismiss all hints after a while
     this.tooltipTimers.push(window.setTimeout(() => {
       this.dismissTooltip();
-    }, 12000));
+    }, 15000));
   }
 
   private showTooltipOn(buttonId: string, text: string): void {

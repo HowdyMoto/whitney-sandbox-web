@@ -143,7 +143,7 @@ export class App {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       this.config.speedMultiplier = Math.max(0.1, Math.min(4, this.config.speedMultiplier + delta));
-      this.showModeName(`Speed: ${this.config.speedMultiplier.toFixed(1)}x`);
+      this.showModeName(`Speed: ${this.config.speedMultiplier.toFixed(1)}x`, false);
     }, { passive: false });
 
     this.animEngine.init(this.config);
@@ -636,13 +636,22 @@ export class App {
 
   private modeLabelTimers: number[] = [];
 
-  private showModeName(name: string): void {
+  private showModeName(name: string, animate: boolean = true): void {
     // Clear any pending animations
     clearTimeout(this.modeLabelTimeout);
     for (const t of this.modeLabelTimers) clearTimeout(t);
     this.modeLabelTimers.length = 0;
     this.modeLabel.innerHTML = '';
     this.modeLabel.style.opacity = '1';
+
+    if (!animate) {
+      // Show immediately without animation (for live updates like speed)
+      this.modeLabel.textContent = name;
+      this.modeLabelTimeout = window.setTimeout(() => {
+        this.modeLabel.style.opacity = '0';
+      }, 2000);
+      return;
+    }
 
     // Create a span per character and reveal them sequentially
     const spans: HTMLSpanElement[] = [];
