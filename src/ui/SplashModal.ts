@@ -38,30 +38,67 @@ export class SplashModal {
 
   private startOrbitAnimation(): void {
     const canvas = this.root.querySelector('#orbit-canvas') as HTMLCanvasElement;
-    if (!canvas) return;
+    const button = this.root.querySelector('.splash-button') as HTMLButtonElement;
+    if (!canvas || !button) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Get button dimensions relative to canvas
+    const buttonRect = button.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    const offsetX = buttonRect.left - canvasRect.left;
+    const offsetY = buttonRect.top - canvasRect.top;
+    const btnWidth = buttonRect.width;
+    const btnHeight = buttonRect.height;
+    const padding = 8;
+
     // Colorful gradient palette matching the app
     const colors = [
-      'rgba(168, 230, 255, 0.8)',  // cyan
-      'rgba(255, 135, 210, 0.8)',  // pink
-      'rgba(167, 255, 167, 0.8)',  // green
-      'rgba(255, 200, 100, 0.8)',  // orange
-      'rgba(200, 150, 255, 0.8)',  // purple
+      'rgba(168, 230, 255, 0.9)',  // cyan
+      'rgba(255, 135, 210, 0.9)',  // pink
+      'rgba(167, 255, 167, 0.9)',  // green
+      'rgba(255, 200, 100, 0.9)',  // orange
+      'rgba(200, 150, 255, 0.9)',  // purple
     ];
 
     const dots = colors.map((color, i) => ({
       color,
-      speed: 0.5 + (i * 0.2), // Different angular speeds
-      angle: (i * 360) / colors.length,
+      speed: 0.3 + (i * 0.1), // Different speeds around the perimeter
+      progress: (i / colors.length) * 100, // Starting positions spread around edge
     }));
 
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = 45;
-    const dotRadius = 4;
+    // Calculate perimeter path
+    const perimeter = 2 * (btnWidth + btnHeight);
+
+    // Function to get x, y position along button border
+    const getPositionOnBorder = (progressPercent: number) => {
+      const distance = (progressPercent / 100) * perimeter;
+      let x = offsetX + padding;
+      let y = offsetY + padding;
+
+      if (distance < btnWidth) {
+        // Top edge
+        x = offsetX + padding + distance;
+        y = offsetY + padding;
+      } else if (distance < btnWidth + btnHeight) {
+        // Right edge
+        x = offsetX + btnWidth - padding;
+        y = offsetY + padding + (distance - btnWidth);
+      } else if (distance < 2 * btnWidth + btnHeight) {
+        // Bottom edge
+        x = offsetX + btnWidth - padding - (distance - btnWidth - btnHeight);
+        y = offsetY + btnHeight - padding;
+      } else {
+        // Left edge
+        x = offsetX + padding;
+        y = offsetY + btnHeight - padding - (distance - 2 * btnWidth - btnHeight);
+      }
+
+      return { x, y };
+    };
+
+    const dotRadius = 5;
 
     const animate = () => {
       // Clear canvas
@@ -69,10 +106,8 @@ export class SplashModal {
 
       // Update and draw dots
       for (const dot of dots) {
-        dot.angle += dot.speed;
-        const rad = (dot.angle * Math.PI) / 180;
-        const x = centerX + radius * Math.cos(rad);
-        const y = centerY + radius * Math.sin(rad);
+        dot.progress = (dot.progress + dot.speed) % 100;
+        const { x, y } = getPositionOnBorder(dot.progress);
 
         ctx.fillStyle = dot.color;
         ctx.beginPath();
