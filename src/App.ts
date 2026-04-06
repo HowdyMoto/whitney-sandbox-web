@@ -75,6 +75,7 @@ export class App {
       onRandomize: () => this.randomizeMode(),
       onMidi: () => { this.toggleMidi(); },
       onPerfToggle: () => { this.perfOverlay.toggle(); this.updateTransport(); },
+      onWarmAudio: () => { this.warmAudioContext(); },
     });
     this.perfOverlay = new PerfOverlay();
     this.bloomPass = new BloomPass(this.gl, 1, 1); // resized in draw()
