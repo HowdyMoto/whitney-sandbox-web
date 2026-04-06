@@ -1,6 +1,7 @@
 export class SplashModal {
   private root: HTMLDivElement;
   private onDismiss: (() => void) | null = null;
+  private animationFrameId = 0;
 
   constructor() {
     this.root = document.createElement('div');
@@ -12,7 +13,10 @@ export class SplashModal {
         <p class="credit">
           Inspired by Jim Bumgardner's <a href="https://www.whitneymusicbox.org" target="_blank" rel="noopener noreferrer">Whitney Music Box</a>
         </p>
-        <button class="splash-button">Start</button>
+        <div class="button-container">
+          <canvas id="orbit-canvas" width="120" height="120"></canvas>
+          <button class="splash-button">Start</button>
+        </div>
       </div>
     `;
 
@@ -25,13 +29,65 @@ export class SplashModal {
 
     document.body.appendChild(this.root);
     this.injectStyles();
+    this.startOrbitAnimation();
   }
 
   onDismissed(callback: () => void): void {
     this.onDismiss = callback;
   }
 
+  private startOrbitAnimation(): void {
+    const canvas = this.root.querySelector('#orbit-canvas') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Colorful gradient palette matching the app
+    const colors = [
+      'rgba(168, 230, 255, 0.8)',  // cyan
+      'rgba(255, 135, 210, 0.8)',  // pink
+      'rgba(167, 255, 167, 0.8)',  // green
+      'rgba(255, 200, 100, 0.8)',  // orange
+      'rgba(200, 150, 255, 0.8)',  // purple
+    ];
+
+    const dots = colors.map((color, i) => ({
+      color,
+      speed: 0.5 + (i * 0.2), // Different angular speeds
+      angle: (i * 360) / colors.length,
+    }));
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 45;
+    const dotRadius = 4;
+
+    const animate = () => {
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Update and draw dots
+      for (const dot of dots) {
+        dot.angle += dot.speed;
+        const rad = (dot.angle * Math.PI) / 180;
+        const x = centerX + radius * Math.cos(rad);
+        const y = centerY + radius * Math.sin(rad);
+
+        ctx.fillStyle = dot.color;
+        ctx.beginPath();
+        ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      this.animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+  }
+
   private dismiss(): void {
+    cancelAnimationFrame(this.animationFrameId);
     this.root.classList.add('dismissing');
     setTimeout(() => {
       this.root.remove();
@@ -95,6 +151,23 @@ export class SplashModal {
   color: rgba(255, 255, 255, 0.5);
   margin: 24px 0 32px 0;
   line-height: 1.6;
+}
+
+.button-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#orbit-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
 }
 
 .splash-content a {
