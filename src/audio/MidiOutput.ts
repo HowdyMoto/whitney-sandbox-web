@@ -53,7 +53,8 @@ export class MidiOutput {
   sendNoteOn(midiNote: number, velocity: number, channel = 0): void {
     if (!this.enabled || !this.output) return;
     const status = 0x90 | (channel & 0x0F);
-    const vel = Math.max(0, Math.min(127, Math.round(velocity)));
+    // Scale velocity from 0-1 range to MIDI 0-127 range, with minimum of 1 to avoid silence
+    const vel = Math.max(1, Math.min(127, Math.round(velocity * 127)));
     this.output.send([status, midiNote, vel]);
 
     // Auto note-off
