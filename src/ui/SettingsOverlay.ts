@@ -222,7 +222,7 @@ export class SettingsOverlay {
     this.addSectionHeader('Path Lines');
     this.addCheckbox('Show path lines', rc.pathLine.show, v => { rc.pathLine.show = v; this.changed(); });
     if (rc.pathLine.show) {
-      this.addSlider('Width', rc.pathLine.width, 0.5, 5, 0.5, v => { rc.pathLine.width = v; this.changed(); });
+      this.addSlider('Width', rc.pathLine.width, 0.5, 10, 0.5, v => { rc.pathLine.width = v; this.changed(); });
       this.addSlider('Opacity', rc.pathLine.opacity, 0, 1, 0.01, v => { rc.pathLine.opacity = v; this.changed(); }, v => `${Math.round(v * 100)}%`);
       this.addCheckbox('Use dot colors', !rc.pathLine.monochrome, v => { rc.pathLine.monochrome = !v; this.changed(); });
     }
