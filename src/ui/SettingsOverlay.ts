@@ -25,6 +25,7 @@ type TabName = 'music' | 'motion' | 'style' | 'background' | 'presets';
 export class SettingsOverlay {
   private root: HTMLDivElement;
   private scrim: HTMLDivElement;
+  private edgeTab: HTMLButtonElement;
   private tabContent: HTMLDivElement;
   private visible = false;
   private currentTab: TabName = 'music';
@@ -48,6 +49,18 @@ export class SettingsOverlay {
     this.root.className = 'settings-overlay';
     this.tabContent = document.createElement('div');
     this.tabContent.className = 'settings-content';
+
+    // Edge tab button — slides with the overlay
+    this.edgeTab = document.createElement('button');
+    this.edgeTab.className = 'settings-edge-tab';
+    this.edgeTab.innerHTML = '&#x276F;'; // ❯ right chevron
+    this.edgeTab.title = 'Settings (O)';
+    this.edgeTab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggle();
+    });
+    this.root.appendChild(this.edgeTab);
+
     this.buildShell();
     document.body.appendChild(this.root);
     this.injectStyles();
@@ -76,8 +89,21 @@ export class SettingsOverlay {
     this.visible = !this.visible;
     this.root.classList.toggle('open', this.visible);
     this.scrim.classList.toggle('visible', this.visible);
+    this.edgeTab.innerHTML = this.visible ? '&#x276E;' : '&#x276F;'; // ❮ or ❯
+    this.edgeTab.classList.toggle('open', this.visible);
     if (this.visible) this.rebuild();
     this.onToggle?.();
+  }
+
+  showEdgeTab(near: boolean): void {
+    if (this.visible) return;
+    this.edgeTab.classList.add('visible');
+    this.edgeTab.classList.toggle('near', near);
+  }
+
+  hideEdgeTab(): void {
+    if (this.visible) return;
+    this.edgeTab.classList.remove('visible', 'near');
   }
 
   isVisible(): boolean { return this.visible; }
@@ -98,13 +124,6 @@ export class SettingsOverlay {
   // ─── Shell ──────────────────────────────────────────────────────
 
   private buildShell(): void {
-    // Close button
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'settings-close';
-    closeBtn.textContent = '\u00d7';
-    closeBtn.addEventListener('click', () => this.toggle());
-    this.root.appendChild(closeBtn);
-
     // Tab bar
     const tabBar = document.createElement('div');
     tabBar.className = 'settings-tabs';
@@ -784,7 +803,7 @@ export class SettingsOverlay {
   display: flex;
   flex-direction: column;
   box-shadow: 4px 0 24px rgba(0,0,0,0.5);
-  overflow: hidden;
+  overflow: visible;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -792,12 +811,37 @@ export class SettingsOverlay {
   transform: translateX(0);
 }
 
-.settings-close {
-  position: absolute; top: 6px; right: 8px;
-  background: none; border: none; color: #888; font-size: 22px;
-  cursor: pointer; z-index: 2; padding: 4px 8px; line-height: 1;
+.settings-edge-tab {
+  position: absolute;
+  left: 100%; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px;
+  background: rgba(20, 20, 20, 0.94);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: none;
+  border-radius: 0 22px 22px 0;
+  color: rgba(255,255,255,0.5);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  padding: 0 0 0 2px;
+  transition: opacity 0.4s, background 0.15s, color 0.15s;
+  box-shadow: 4px 0 12px rgba(0,0,0,0.3);
 }
-.settings-close:hover { color: #fff; }
+.settings-edge-tab.visible,
+.settings-edge-tab.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.settings-edge-tab:hover {
+  background: rgba(40, 40, 40, 0.96);
+  color: rgba(255,255,255,0.9);
+}
+.settings-edge-tab:active {
+  background: rgba(60, 60, 60, 0.96);
+}
 
 .settings-tabs {
   display: flex;
@@ -808,9 +852,9 @@ export class SettingsOverlay {
 }
 .settings-tab {
   background: none; border: none; color: #bbb;
-  padding: 6px 12px; font-size: 13px; cursor: pointer;
+  padding: 6px 8px; font-size: 13px; cursor: pointer;
   border-bottom: 2px solid transparent;
-  font-family: inherit; letter-spacing: 0.5px;
+  font-family: inherit; letter-spacing: 0.3px;
   text-transform: uppercase; font-weight: 500;
 }
 .settings-tab:hover { color: #ccc; }

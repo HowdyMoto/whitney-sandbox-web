@@ -53,7 +53,6 @@ export class App {
   // Overlay elements
   private modeLabel: HTMLDivElement;
   private modeLabelTimeout = 0;
-  private settingsButton: HTMLButtonElement;
   private mouseIdleTimeout = 0;
   private saveTimeout = 0;
 
@@ -105,19 +104,6 @@ export class App {
     });
     document.body.appendChild(this.modeLabel);
 
-    // Edge tab — thin strip on the left edge, expands on hover/mouse near
-    this.settingsButton = document.createElement('button');
-    this.settingsButton.className = 'edge-tab';
-    this.settingsButton.innerHTML = '&#x276F;'; // ❯ right chevron
-    this.settingsButton.title = 'Settings (O)';
-    this.settingsButton.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.settingsOverlay.toggle();
-      this.updateSettingsButtonVisibility();
-    });
-    document.body.appendChild(this.settingsButton);
-    this.injectEdgeTabStyles();
-
     // Warm up AudioContext on first user interaction (mobile autoplay policy)
     const warmAudio = () => this.warmAudioContext();
     window.addEventListener('click', warmAudio, { once: true });
@@ -131,7 +117,7 @@ export class App {
     // Click/tap anywhere toggles settings overlay
     canvas.addEventListener('click', () => {
       this.settingsOverlay.toggle();
-      this.updateSettingsButtonVisibility();
+      this.settingsOverlay.hideEdgeTab();
     });
 
     // Right-click to randomize
@@ -192,7 +178,7 @@ export class App {
         this.modeLoader, this.bgShaderManager,
         () => { this.scheduleAutoSave(); },
         (key) => this.switchInstrument(key),
-        () => this.updateSettingsButtonVisibility(),
+        () => this.settingsOverlay.hideEdgeTab(),
       );
 
       this.lastTime = performance.now() / 1000;
@@ -447,66 +433,15 @@ export class App {
   private onMouseActivity(e?: MouseEvent): void {
     if (this.settingsOverlay.isVisible()) return;
 
-    // Show edge tab on mouse movement
-    this.settingsButton.classList.add('visible');
-
-    // If mouse is near left edge, highlight the tab
-    if (e && e.clientX < 40) {
-      this.settingsButton.classList.add('near');
-    } else {
-      this.settingsButton.classList.remove('near');
-    }
+    const near = !!(e && e.clientX < 40);
+    this.settingsOverlay.showEdgeTab(near);
 
     clearTimeout(this.mouseIdleTimeout);
     this.mouseIdleTimeout = window.setTimeout(() => {
       if (!this.settingsOverlay.isVisible()) {
-        this.settingsButton.classList.remove('visible', 'near');
+        this.settingsOverlay.hideEdgeTab();
       }
     }, 2500);
-  }
-
-  private updateSettingsButtonVisibility(): void {
-    if (this.settingsOverlay.isVisible()) {
-      this.settingsButton.classList.remove('visible', 'near');
-    }
-  }
-
-  private injectEdgeTabStyles(): void {
-    if (document.getElementById('edge-tab-styles')) return;
-    const s = document.createElement('style');
-    s.id = 'edge-tab-styles';
-    s.textContent = `
-.edge-tab {
-  position: fixed;
-  left: 0; top: 50%; transform: translateY(-50%);
-  width: 50px; height: 50px;
-  background: rgba(255,255,255,0.12);
-  border: none;
-  border-radius: 0 50px 50px 0;
-  color: rgba(255,255,255,0.5);
-  font-size: 28px;
-  cursor: pointer;
-  z-index: 40;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0;
-  transition: opacity 0.4s, background 0.05s, color 0.05s;
-  pointer-events: none;
-  padding: 0;
-}
-.edge-tab.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-.edge-tab.near,
-.edge-tab:hover {
-  background: rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.9);
-}
-.edge-tab:active {
-  background: rgba(255,255,255,0.2);
-}
-`;
-    document.head.appendChild(s);
   }
 
   private updateTransport(): void {
