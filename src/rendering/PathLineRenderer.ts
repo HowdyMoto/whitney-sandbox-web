@@ -144,11 +144,10 @@ export class PathLineRenderer {
     this.shader.use();
     this.shader.set2f('u_resolution', canvasW, canvasH);
 
-    // Draw path lines
+    // Draw path lines (as thick quads using triangle strips)
     if (pathConfig.show && this.pathVertCount > 0) {
-      gl.lineWidth(pathConfig.width);
       gl.bindVertexArray(this.pathVAO);
-      gl.drawArrays(gl.LINES, 0, this.pathVertCount);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.pathVertCount);
     }
 
     // Draw trigger markers
@@ -198,11 +197,29 @@ export class PathLineRenderer {
         [r, g, b] = hsvToRgb(dot.hue, dot.saturation, dot.brightness);
       }
 
+      const halfWidth = pathConfig.width * 0.5;
       for (let s = 0; s + 1 < points.length; s++) {
         const p0 = points[s]!;
         const p1 = points[s + 1]!;
-        positions.push(p0.x, p0.y, p1.x, p1.y);
-        colors.push(r, g, b, pathConfig.opacity, r, g, b, pathConfig.opacity);
+        const dx = p1.x - p0.x;
+        const dy = p1.y - p0.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 0.001) continue;
+
+        const nx = -dy / len;
+        const ny = dx / len;
+        const ox = nx * halfWidth;
+        const oy = ny * halfWidth;
+
+        // Create quad: 4 vertices per segment (2 triangles)
+        positions.push(
+          p0.x + ox, p0.y + oy,  // top-left
+          p0.x - ox, p0.y - oy,  // bottom-left
+          p1.x + ox, p1.y + oy,  // top-right
+          p1.x - ox, p1.y - oy   // bottom-right
+        );
+        const c = [r, g, b, pathConfig.opacity];
+        colors.push(...c, ...c, ...c, ...c);
       }
     }
 
