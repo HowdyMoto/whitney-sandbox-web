@@ -10,8 +10,8 @@ y = "cy - amplitude * sin(pi() * localT) * sin(t * two_pi())"
 value = "localT"
 
 [marker.1]
-x = "cx + maxRadius * 0.05 * cos(t * two_pi())"
-y = "cy - maxRadius * 0.05 * sin(t * two_pi())"
+x = "cx"
+y = "cy"
 
 [path]
 x = "cx + amplitude * sin(sweep) * cos(t * two_pi())"
