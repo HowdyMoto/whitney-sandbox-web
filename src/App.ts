@@ -51,12 +51,14 @@ export class App {
   private trailEmitAccum: number[] = [];
 
   // Overlay elements
+  private canvas: HTMLCanvasElement;
   private modeLabel: HTMLDivElement;
   private modeLabelTimeout = 0;
   private mouseIdleTimeout = 0;
   private saveTimeout = 0;
 
   constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
     // Show splash modal on startup
     const splash = new SplashModal();
     splash.onDismissed(() => {
@@ -454,6 +456,12 @@ export class App {
       perfVisible: this.perfOverlay.isVisible(),
     });
     this.transportBar.setBottomOffset(this.pianoKeyboard.getHeight());
+    this.syncCanvasHeight();
+  }
+
+  private syncCanvasHeight(): void {
+    const pianoH = this.pianoKeyboard.getHeight();
+    this.canvas.style.height = pianoH > 0 ? `calc(100% - ${pianoH}px)` : '100%';
   }
 
   private toggleMidi(): void {
@@ -508,7 +516,11 @@ export class App {
         // Randomize mode-specific params within their slider ranges
         const params: Record<string, number> = {};
         for (const p of mode.paramDefs) {
-          params[p.name] = snap(range(p.minVal, p.maxVal), p.step || 0.01);
+          if (p.options.length > 0) {
+            params[p.name] = pick(p.options).value;
+          } else {
+            params[p.name] = snap(range(p.minVal, p.maxVal), p.step || 0.01);
+          }
         }
         c.modeParams = params;
       }
