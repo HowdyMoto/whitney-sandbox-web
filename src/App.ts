@@ -432,6 +432,14 @@ export class App {
       this.showModeName(this.bloomConfig.enabled ? 'Bloom: ON' : 'Bloom: OFF');
     } else if (e.key === 'o' || e.key === 'O') {
       this.settingsOverlay.toggle();
+    } else if (e.key === '-' || e.key === '_') {
+      // Decrease speed
+      this.config.speedMultiplier = Math.max(0.1, this.config.speedMultiplier - 0.1);
+      this.showModeName(`Speed: ${this.config.speedMultiplier.toFixed(1)}x`, false);
+    } else if (e.key === '+' || e.key === '=') {
+      // Increase speed
+      this.config.speedMultiplier = Math.min(4, this.config.speedMultiplier + 0.1);
+      this.showModeName(`Speed: ${this.config.speedMultiplier.toFixed(1)}x`, false);
     }
     this.scheduleAutoSave();
   }
