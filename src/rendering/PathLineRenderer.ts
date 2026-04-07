@@ -52,6 +52,7 @@ export class PathLineRenderer {
   private lastModeParamsStr = '';
   private lastPathOpacity = -1;
   private lastPathMonochrome = false;
+  private lastPathWidth = -1;
   private needsRebuild = true;
 
   // Reusable context
@@ -115,7 +116,8 @@ export class PathLineRenderer {
       config.animationMode !== this.lastAnimMode ||
       modeParamsStr !== this.lastModeParamsStr ||
       pathConfig.opacity !== this.lastPathOpacity ||
-      pathConfig.monochrome !== this.lastPathMonochrome;
+      pathConfig.monochrome !== this.lastPathMonochrome ||
+      pathConfig.width !== this.lastPathWidth;
 
     if (fullRebuild) {
       this.buildPaths(dots, config, pathConfig, canvasW, canvasH);
@@ -126,6 +128,7 @@ export class PathLineRenderer {
       this.lastModeParamsStr = modeParamsStr;
       this.lastPathOpacity = pathConfig.opacity;
       this.lastPathMonochrome = pathConfig.monochrome;
+      this.lastPathWidth = pathConfig.width;
       this.needsRebuild = false;
     }
 
@@ -143,6 +146,7 @@ export class PathLineRenderer {
 
     // Draw path lines
     if (pathConfig.show && this.pathVertCount > 0) {
+      gl.lineWidth(pathConfig.width);
       gl.bindVertexArray(this.pathVAO);
       gl.drawArrays(gl.LINES, 0, this.pathVertCount);
     }
