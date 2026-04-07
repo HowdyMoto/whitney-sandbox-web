@@ -232,6 +232,7 @@ export class SettingsOverlay {
     this.addCheckbox('Show markers', rc.triggerLine.show, v => { rc.triggerLine.show = v; this.changed(); this.rebuild(); });
     if (rc.triggerLine.show) {
       this.addSlider('Marker Size', rc.triggerLine.size, 0.5, 3, 0.1, v => { rc.triggerLine.size = v; this.changed(); });
+      this.addSlider('Brightness', rc.triggerLine.brightness, 0, 1, 0.01, v => { rc.triggerLine.brightness = v; this.changed(); }, v => `${Math.round(v * 100)}%`);
       this.addCheckbox('Pulse on trigger', rc.triggerLine.pulse, v => { rc.triggerLine.pulse = v; this.changed(); this.rebuild(); });
       if (rc.triggerLine.pulse) {
         this.addSlider('Pulse Brightness', rc.triggerLine.pulseBrightness, 0, 5, 0.1, v => { rc.triggerLine.pulseBrightness = v; this.changed(); });
