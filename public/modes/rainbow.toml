@@ -10,21 +10,21 @@ max = 1.0
 
 [position]
 x = "cx + (min(screenW, screenH) * (0.1 + t * 0.35)) * cos(pi() * (1 - if(sweepMode > 0.5, localT, if(localT < 0.5, localT * 2, (1 - localT) * 2))))"
-y = "screenH * 0.85 - (min(screenW, screenH) * (0.1 + t * 0.35)) * sin(pi() * (1 - if(sweepMode > 0.5, localT, if(localT < 0.5, localT * 2, (1 - localT) * 2))))"
+y = "cy + min(screenW, screenH) * 0.225 - (min(screenW, screenH) * (0.1 + t * 0.35)) * sin(pi() * (1 - if(sweepMode > 0.5, localT, if(localT < 0.5, localT * 2, (1 - localT) * 2))))"
 
 [trigger]
 value = "if(localT < 0.5, localT, 1 - localT)"
 
 [marker.1]
 x = "cx - min(screenW, screenH) * (0.1 + t * 0.35)"
-y = "screenH * 0.85"
+y = "cy + min(screenW, screenH) * 0.225"
 
 [marker.2]
 x = "cx + min(screenW, screenH) * (0.1 + t * 0.35)"
-y = "screenH * 0.85"
+y = "cy + min(screenW, screenH) * 0.225"
 
 [path]
 x = "cx + (min(screenW, screenH) * (0.1 + t * 0.35)) * cos(pi() - sweep)"
-y = "screenH * 0.85 - (min(screenW, screenH) * (0.1 + t * 0.35)) * sin(pi() - sweep)"
+y = "cy + min(screenW, screenH) * 0.225 - (min(screenW, screenH) * (0.1 + t * 0.35)) * sin(pi() - sweep)"
 range_min = "0"
 range_max = "pi()"

@@ -5,17 +5,17 @@ isLinear = true
 
 [position]
 x = "screenW / 2 + sin(pi() / 3 * sin(cycleProgress * two_pi() * speed)) * min(screenW, screenH) * (0.1 + t * 0.35)"
-y = "screenH * 0.05 + cos(pi() / 3 * sin(cycleProgress * two_pi() * speed)) * min(screenW, screenH) * (0.1 + t * 0.35)"
+y = "cy - min(screenW, screenH) * 0.225 + cos(pi() / 3 * sin(cycleProgress * two_pi() * speed)) * min(screenW, screenH) * (0.1 + t * 0.35)"
 
 [trigger]
 value = "fmod(cycleProgress * speed * 2, 1.0)"
 
 [marker.1]
 x = "screenW / 2"
-y = "screenH * 0.05 + min(screenW, screenH) * (0.1 + t * 0.35)"
+y = "cy - min(screenW, screenH) * 0.225 + min(screenW, screenH) * (0.1 + t * 0.35)"
 
 [path]
 x = "screenW / 2 + sin(sweep) * min(screenW, screenH) * (0.1 + t * 0.35)"
-y = "screenH * 0.05 + cos(sweep) * min(screenW, screenH) * (0.1 + t * 0.35)"
+y = "cy - min(screenW, screenH) * 0.225 + cos(sweep) * min(screenW, screenH) * (0.1 + t * 0.35)"
 range_min = "-pi() / 3"
 range_max = "pi() / 3"
