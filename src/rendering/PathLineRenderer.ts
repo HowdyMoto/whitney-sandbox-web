@@ -198,24 +198,58 @@ export class PathLineRenderer {
       }
 
       const halfWidth = pathConfig.width * 0.5;
-      for (let s = 0; s + 1 < points.length; s++) {
+      const n = points.length;
+      if (n < 2) continue;
+
+      // Check if path is closed (first ≈ last point)
+      const closeDx = points[n - 1]!.x - points[0]!.x;
+      const closeDy = points[n - 1]!.y - points[0]!.y;
+      const isClosed = (closeDx * closeDx + closeDy * closeDy) < 1;
+
+      // Compute per-vertex averaged normals for smooth joins
+      const normals = new Float32Array(n * 2);
+      for (let v = 0; v < n; v++) {
+        let nnx = 0, nny = 0;
+        // Incoming segment (prev → v)
+        const prev = v > 0 ? v - 1 : (isClosed ? n - 2 : -1);
+        if (prev >= 0) {
+          const dx = points[v]!.x - points[prev]!.x;
+          const dy = points[v]!.y - points[prev]!.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          if (len > 1e-4) { nnx += -dy / len; nny += dx / len; }
+        }
+        // Outgoing segment (v → next)
+        const next = v < n - 1 ? v + 1 : (isClosed ? 1 : -1);
+        if (next >= 0 && next < n) {
+          const dx = points[next]!.x - points[v]!.x;
+          const dy = points[next]!.y - points[v]!.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          if (len > 1e-4) { nnx += -dy / len; nny += dx / len; }
+        }
+        const len = Math.sqrt(nnx * nnx + nny * nny);
+        if (len > 1e-4) {
+          normals[v * 2] = nnx / len;
+          normals[v * 2 + 1] = nny / len;
+        }
+      }
+
+      // Build quads using averaged normals (shared edges at joins)
+      for (let s = 0; s + 1 < n; s++) {
         const p0 = points[s]!;
         const p1 = points[s + 1]!;
-        const dx = p1.x - p0.x;
-        const dy = p1.y - p0.y;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        if (len < 0.001) continue;
+        const nx0 = normals[s * 2]!;
+        const ny0 = normals[s * 2 + 1]!;
+        const nx1 = normals[(s + 1) * 2]!;
+        const ny1 = normals[(s + 1) * 2 + 1]!;
+        if (nx0 === 0 && ny0 === 0 && nx1 === 0 && ny1 === 0) continue;
 
-        const nx = -dy / len;
-        const ny = dx / len;
-        const ox = nx * halfWidth;
-        const oy = ny * halfWidth;
+        const ox0 = nx0 * halfWidth, oy0 = ny0 * halfWidth;
+        const ox1 = nx1 * halfWidth, oy1 = ny1 * halfWidth;
 
-        // Create quad as 2 triangles (separate, not strip)
         // Triangle 1
-        positions.push(p0.x + ox, p0.y + oy, p0.x - ox, p0.y - oy, p1.x + ox, p1.y + oy);
+        positions.push(p0.x + ox0, p0.y + oy0, p0.x - ox0, p0.y - oy0, p1.x + ox1, p1.y + oy1);
         // Triangle 2
-        positions.push(p0.x - ox, p0.y - oy, p1.x + ox, p1.y + oy, p1.x - ox, p1.y - oy);
+        positions.push(p0.x - ox0, p0.y - oy0, p1.x + ox1, p1.y + oy1, p1.x - ox1, p1.y - oy1);
 
         const c = [r, g, b, pathConfig.opacity];
         colors.push(...c, ...c, ...c, ...c, ...c, ...c);
