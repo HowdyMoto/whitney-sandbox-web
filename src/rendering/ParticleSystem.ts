@@ -110,30 +110,32 @@ export class ParticleSystem {
   update(deltaTime: number, config: ParticleConfig): void {
     if (this.activeCount === 0) return;
 
+    // Pre-compute drag factor once for all particles
+    const drag = Math.exp(-config.drag * deltaTime);
+    const gravDt = config.gravity * deltaTime;
+    const particles = this.particles;
+
     let writeIdx = 0;
     for (let i = 0; i < this.activeCount; i++) {
-      const p = this.particles[i]!;
+      const p = particles[i]!;
       p.life -= deltaTime;
       if (p.life <= 0) continue;
 
       // Physics
-      p.vy += config.gravity * deltaTime;
-      const drag = Math.exp(-config.drag * deltaTime);
+      p.vy += gravDt;
       p.vx *= drag;
       p.vy *= drag;
       p.x += p.vx * deltaTime;
       p.y += p.vy * deltaTime;
 
       // Fade alpha
-      const ageRatio = 1 - p.life / p.maxLife;
-      p.a = Math.pow(1 - ageRatio, 1.5);
+      p.a = Math.pow(p.life / p.maxLife, 1.5);
 
-      // Compact
+      // Compact via reference swap instead of field-by-field copy
       if (writeIdx !== i) {
-        const dst = this.particles[writeIdx]!;
-        dst.x = p.x; dst.y = p.y; dst.vx = p.vx; dst.vy = p.vy;
-        dst.life = p.life; dst.maxLife = p.maxLife; dst.size = p.size;
-        dst.r = p.r; dst.g = p.g; dst.b = p.b; dst.a = p.a;
+        const tmp = particles[writeIdx]!;
+        particles[writeIdx] = p;
+        particles[i] = tmp;
       }
       writeIdx++;
     }

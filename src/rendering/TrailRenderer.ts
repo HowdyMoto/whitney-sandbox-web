@@ -57,11 +57,13 @@ export class TrailRenderer {
 
     const aPos = this.shader.getAttribLocation('a_position');
     gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, this.posArr.byteLength, gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(aPos);
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
     const aCol = this.shader.getAttribLocation('a_color');
     gl.bindBuffer(gl.ARRAY_BUFFER, this.colBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, this.colArr.byteLength, gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(aCol);
     gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, 0, 0);
 
@@ -120,40 +122,55 @@ export class TrailRenderer {
     const posArr = this.posArr;
     const colArr = this.colArr;
 
+    const halfWidth = config.width * 0.5;
+    const lifetime = config.lifetime;
+    const fadeExp = config.fadeExponent;
+    const opacity = config.opacity;
+    const invNumDots = 1 / Math.max(numDots, 1);
+
     for (let d = 0; d < numDots; d++) {
       const history = this.histories[d];
       if (!history || history.count < 2) continue;
 
-      const t = d / Math.max(numDots, 1);
+      const t = d * invNumDots;
       const hsv = getColorHSV(t, colorScheme.name, d);
       const sat = Math.min(hsv.s * colorScheme.saturationMultiplier, 1);
       const bri = Math.min(hsv.v * colorScheme.brightnessMultiplier, 1);
       const [cr, cg, cb] = hsvToRgb(hsv.h, sat, bri);
 
-      const halfWidth = config.width * 0.5;
       let prevX = dots[d]!.position[0];
       let prevY = dots[d]!.position[1];
-      const newestTime = this.getTimestamp(history, 0);
+
+      // Inline ring buffer index: compute base once, decrement per iteration
+      const positions = history.positions;
+      const timestamps = history.timestamps;
+      let ringIdx = (history.head - 1 + MAX_HISTORY) % MAX_HISTORY;
+      const newestTime = timestamps[ringIdx]!;
 
       let vertCount = 0;
 
       for (let p = 0; p < history.count; p++) {
-        const px = this.getPositionX(history, p);
-        const py = this.getPositionY(history, p);
-        const age = newestTime - this.getTimestamp(history, p);
+        const px = positions[ringIdx * 2]!;
+        const py = positions[ringIdx * 2 + 1]!;
+        const age = newestTime - timestamps[ringIdx]!;
 
-        if (age > config.lifetime) break;
+        if (age > lifetime) break;
 
         const dx = px - prevX;
         const dy = py - prevY;
         const len = Math.sqrt(dx * dx + dy * dy);
-        if (len < 0.001) { prevX = px; prevY = py; continue; }
+        if (len < 0.001) {
+          prevX = px; prevY = py;
+          ringIdx = (ringIdx - 1 + MAX_HISTORY) % MAX_HISTORY;
+          continue;
+        }
 
-        const fadeFactor = age / config.lifetime;
-        const alpha = Math.pow(1 - fadeFactor, config.fadeExponent) * config.opacity;
+        const fadeFactor = age / lifetime;
+        const alpha = Math.pow(1 - fadeFactor, fadeExp) * opacity;
         const w = halfWidth * (1 - fadeFactor * 0.5);
-        const nx = -dy / len;
-        const ny = dx / len;
+        const invLen = 1 / len;
+        const nx = -dy * invLen;
+        const ny = dx * invLen;
 
         const off2 = vertCount * 2;
         const off4 = vertCount * 4;
@@ -167,35 +184,22 @@ export class TrailRenderer {
         vertCount += 2;
         prevX = px;
         prevY = py;
+        ringIdx = (ringIdx - 1 + MAX_HISTORY) % MAX_HISTORY;
       }
 
       if (vertCount < 4) continue;
 
+      const posLen = vertCount * 2;
+      const colLen = vertCount * 4;
       gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuf);
-      gl.bufferData(gl.ARRAY_BUFFER, posArr.subarray(0, vertCount * 2), gl.DYNAMIC_DRAW);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, posArr, 0, posLen);
       gl.bindBuffer(gl.ARRAY_BUFFER, this.colBuf);
-      gl.bufferData(gl.ARRAY_BUFFER, colArr.subarray(0, vertCount * 4), gl.DYNAMIC_DRAW);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, colArr, 0, colLen);
 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertCount);
     }
 
     gl.bindVertexArray(null);
-  }
-
-  // Ring buffer access: index 0 = most recent, count-1 = oldest
-  private getPositionX(h: TrailHistory, idx: number): number {
-    const actual = ((h.head - 1 - idx) % MAX_HISTORY + MAX_HISTORY) % MAX_HISTORY;
-    return h.positions[actual * 2]!;
-  }
-
-  private getPositionY(h: TrailHistory, idx: number): number {
-    const actual = ((h.head - 1 - idx) % MAX_HISTORY + MAX_HISTORY) % MAX_HISTORY;
-    return h.positions[actual * 2 + 1]!;
-  }
-
-  private getTimestamp(h: TrailHistory, idx: number): number {
-    const actual = ((h.head - 1 - idx) % MAX_HISTORY + MAX_HISTORY) % MAX_HISTORY;
-    return h.timestamps[actual]!;
   }
 
   dispose(): void {

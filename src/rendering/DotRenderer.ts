@@ -76,12 +76,15 @@ export class DotRenderer {
   private quadVBO: WebGLBuffer;
   private instanceVBO: WebGLBuffer;
   private instanceData: Float32Array;
+  // Pre-computed per-dot colors (RGB), reused across glow + core passes
+  private dotColors: Float32Array;
 
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
     this.coreShader = new ShaderProgram(gl, VERT, FRAG);
     this.glowShader = new ShaderProgram(gl, VERT, GLOW_FRAG);
     this.instanceData = new Float32Array(MAX_DOTS * FLOATS_PER_INSTANCE);
+    this.dotColors = new Float32Array(MAX_DOTS * 3); // r,g,b per dot
 
     // Unit quad: 2 triangles covering [-1,1]
     const quadVerts = new Float32Array([
@@ -140,9 +143,12 @@ export class DotRenderer {
     const dotCfg = renderConfig.dot;
     const csCfg = renderConfig.colorScheme;
 
+    // ─── Compute base colors once (shared by glow + core) ───────
+    this.computeDotColors(dots, csCfg);
+
     // ─── Glow pass (additive blend) ─────────────────────────────
     if (dotCfg.showGlow) {
-      this.fillInstanceData(dots, dotCfg.size * dotCfg.glowScale, csCfg, true, dotCfg);
+      this.fillInstanceData(dots, dotCfg.size * dotCfg.glowScale, true, dotCfg);
       gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceVBO);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.instanceData, 0, dots.length * FLOATS_PER_INSTANCE);
 
@@ -155,7 +161,7 @@ export class DotRenderer {
     }
 
     // ─── Core dot pass (alpha blend) ────────────────────────────
-    this.fillInstanceData(dots, dotCfg.size, csCfg, false, dotCfg);
+    this.fillInstanceData(dots, dotCfg.size, false, dotCfg);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceVBO);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.instanceData, 0, dots.length * FLOATS_PER_INSTANCE);
 
@@ -169,18 +175,37 @@ export class DotRenderer {
     gl.bindVertexArray(null);
   }
 
+  /** Compute HSV→RGB once per dot, store in this.dotColors for reuse across passes */
+  private computeDotColors(
+    dots: DotState[],
+    colorScheme: { saturationMultiplier: number; brightnessMultiplier: number },
+  ): void {
+    const colors = this.dotColors;
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i]!;
+      const sat = d.saturation * colorScheme.saturationMultiplier;
+      const bri = d.brightness * colorScheme.brightnessMultiplier;
+      const [r, g, b] = hsvToRgb(d.hue, Math.min(sat, 1), Math.min(bri, 1));
+      const ci = i * 3;
+      colors[ci] = r;
+      colors[ci + 1] = g;
+      colors[ci + 2] = b;
+    }
+  }
+
   private fillInstanceData(
     dots: DotState[],
     baseSize: number,
-    colorScheme: { saturationMultiplier: number; brightnessMultiplier: number },
     isGlow: boolean,
     dotCfg: { pulseScale: number; glowOpacity: number },
   ): void {
     const data = this.instanceData;
+    const colors = this.dotColors;
 
     for (let i = 0; i < dots.length; i++) {
       const d = dots[i]!;
       const offset = i * FLOATS_PER_INSTANCE;
+      const ci = i * 3;
 
       // Size with pulse
       let size = baseSize;
@@ -188,10 +213,10 @@ export class DotRenderer {
         size *= (1 + d.triggerAnimation * dotCfg.pulseScale);
       }
 
-      // Color: apply color scheme multipliers
-      const sat = d.saturation * colorScheme.saturationMultiplier;
-      const bri = d.brightness * colorScheme.brightnessMultiplier;
-      let [r, g, b] = hsvToRgb(d.hue, Math.min(sat, 1), Math.min(bri, 1));
+      // Read pre-computed base color
+      let r = colors[ci]!;
+      let g = colors[ci + 1]!;
+      let b = colors[ci + 2]!;
 
       // Trigger flash toward white (core pass only)
       if (!isGlow && d.triggerAnimation > 0.01) {

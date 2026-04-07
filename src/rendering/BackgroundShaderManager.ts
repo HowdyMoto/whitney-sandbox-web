@@ -290,6 +290,16 @@ export class BackgroundShaderManager {
   // Shader params: shaderKey → uniformName → value
   private shaderParams = new Map<string, Map<string, number>>();
 
+  // Pre-allocated typed arrays for uniform uploads (avoid per-frame allocation)
+  private readonly dotsData = new Float32Array(256 * 4);
+  private readonly velsData = new Float32Array(256 * 2);
+  private readonly triggerData = new Float32Array(256);
+  private readonly notesData = new Float32Array(256);
+  private readonly eventsData = new Float32Array(64 * 4);
+
+  // Cached uniform locations per GL program (WebGLProgram → location map)
+  private uniformLocCache = new Map<WebGLProgram, Map<string, WebGLUniformLocation | null>>();
+
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
     this.quad = new QuadRenderer(gl);
@@ -567,6 +577,19 @@ export class BackgroundShaderManager {
 
   // ─── Uniform upload ─────────────────────────────────────────────
 
+  /** Get a uniform location with per-program caching */
+  private getCachedLoc(prog: WebGLProgram, name: string): WebGLUniformLocation | null {
+    let cache = this.uniformLocCache.get(prog);
+    if (!cache) {
+      cache = new Map();
+      this.uniformLocCache.set(prog, cache);
+    }
+    if (cache.has(name)) return cache.get(name)!;
+    const loc = this.gl.getUniformLocation(prog, name);
+    cache.set(name, loc);
+    return loc;
+  }
+
   private uploadCommonUniforms(
     program: ShaderProgram, dots: DotState[],
     currentTime: number, dt: number,
@@ -590,56 +613,55 @@ export class BackgroundShaderManager {
     const numDots = Math.min(dots.length, 256);
     program.set1i('u_numDots', numDots);
 
-    // Upload dot arrays — WebGL2 doesn't support uploading array uniforms
-    // element-by-element efficiently, so we use the GL directly
     const gl = this.gl;
     const prog = program.program;
 
     // u_dots[i] = vec4(pos.x, pos.y, orbitRadius, hue)
-    const dotsLoc = gl.getUniformLocation(prog, 'u_dots[0]');
+    const dotsLoc = this.getCachedLoc(prog, 'u_dots[0]');
     if (dotsLoc) {
-      const data = new Float32Array(numDots * 4);
+      const data = this.dotsData;
       for (let i = 0; i < numDots; i++) {
         const d = dots[i]!;
-        data[i * 4] = d.position[0];
-        data[i * 4 + 1] = d.position[1];
-        data[i * 4 + 2] = d.orbitRadius;
-        data[i * 4 + 3] = d.hue;
+        const o = i * 4;
+        data[o] = d.position[0];
+        data[o + 1] = d.position[1];
+        data[o + 2] = d.orbitRadius;
+        data[o + 3] = d.hue;
       }
-      gl.uniform4fv(dotsLoc, data);
+      gl.uniform4fv(dotsLoc, data, 0, numDots * 4);
     }
 
     // u_dotVelocities[i] = vec2(vx, vy)
-    const velsLoc = gl.getUniformLocation(prog, 'u_dotVelocities[0]');
+    const velsLoc = this.getCachedLoc(prog, 'u_dotVelocities[0]');
     if (velsLoc) {
-      const data = new Float32Array(numDots * 2);
+      const data = this.velsData;
       for (let i = 0; i < numDots; i++) {
         const d = dots[i]!;
-        data[i * 2] = d.velocity[0];
-        data[i * 2 + 1] = d.velocity[1];
+        const o = i * 2;
+        data[o] = d.velocity[0];
+        data[o + 1] = d.velocity[1];
       }
-      gl.uniform2fv(velsLoc, data);
+      gl.uniform2fv(velsLoc, data, 0, numDots * 2);
     }
 
     // u_dotTrigger[i] = float
-    const trigLoc = gl.getUniformLocation(prog, 'u_dotTrigger[0]');
+    const trigLoc = this.getCachedLoc(prog, 'u_dotTrigger[0]');
     if (trigLoc) {
-      const data = new Float32Array(numDots);
+      const data = this.triggerData;
       for (let i = 0; i < numDots; i++) {
         data[i] = dots[i]!.triggerAnimation;
       }
-      gl.uniform1fv(trigLoc, data);
+      gl.uniform1fv(trigLoc, data, 0, numDots);
     }
 
     // u_dotNotes[i] = float (normalized pitch)
-    const notesLoc = gl.getUniformLocation(prog, 'u_dotNotes[0]');
+    const notesLoc = this.getCachedLoc(prog, 'u_dotNotes[0]');
     if (notesLoc) {
-      const data = new Float32Array(numDots);
+      const data = this.notesData;
       for (let i = 0; i < numDots; i++) {
-        const d = dots[i]!;
-        data[i] = (d.midiNote - 21) / 87; // normalize to 0-1 across piano range
+        data[i] = (dots[i]!.midiNote - 21) / 87;
       }
-      gl.uniform1fv(notesLoc, data);
+      gl.uniform1fv(notesLoc, data, 0, numDots);
     }
 
     // Audio reactive data
@@ -650,26 +672,27 @@ export class BackgroundShaderManager {
       program.set1f('u_audioHigh', audioData.high);
 
       // EQ bands
-      const bandsLoc = gl.getUniformLocation(prog, 'u_eqBands[0]');
+      const bandsLoc = this.getCachedLoc(prog, 'u_eqBands[0]');
       if (bandsLoc) gl.uniform1fv(bandsLoc, audioData.bands);
 
-      const peaksLoc = gl.getUniformLocation(prog, 'u_eqPeaks[0]');
+      const peaksLoc = this.getCachedLoc(prog, 'u_eqPeaks[0]');
       if (peaksLoc) gl.uniform1fv(peaksLoc, audioData.peaks);
 
       // Trigger events
       const numEvents = audioData.triggerEvents.length;
       program.set1i('u_numTriggerEvents', numEvents);
-      const eventsLoc = gl.getUniformLocation(prog, 'u_triggerEvents[0]');
+      const eventsLoc = this.getCachedLoc(prog, 'u_triggerEvents[0]');
       if (eventsLoc && numEvents > 0) {
-        const data = new Float32Array(numEvents * 4);
+        const data = this.eventsData;
         for (let i = 0; i < numEvents; i++) {
           const e = audioData.triggerEvents[i]!;
-          data[i * 4] = e.x;
-          data[i * 4 + 1] = e.y;
-          data[i * 4 + 2] = e.hue;
-          data[i * 4 + 3] = e.birthTime;
+          const o = i * 4;
+          data[o] = e.x;
+          data[o + 1] = e.y;
+          data[o + 2] = e.hue;
+          data[o + 3] = e.birthTime;
         }
-        gl.uniform4fv(eventsLoc, data);
+        gl.uniform4fv(eventsLoc, data, 0, numEvents * 4);
       }
     } else {
       program.set1f('u_audioAmplitude', 0);
@@ -705,6 +728,7 @@ export class BackgroundShaderManager {
     this.simFboB?.dispose();
     this.outputFbo?.dispose();
     this.displayShader = null;
+    this.uniformLocCache.clear();
     this.quad.dispose();
   }
 }
