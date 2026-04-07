@@ -17,7 +17,7 @@ import { BackgroundShaderManager } from './rendering/BackgroundShaderManager.js'
 import { AudioReactiveData } from './physics/AudioReactiveData.js';
 import { countNotesInRange, getAllScales } from './music/ScaleSystem.js';
 import { getAllInstruments } from './audio/InstrumentLibrary.js';
-import { defaultConfig, defaultRenderConfig } from './types.js';
+import { defaultConfig, defaultRenderConfig, ROTATION_DIRECTIONS, TRAIL_MODES, COLOR_SCHEMES } from './types.js';
 import type { Config, RenderConfig, TriggerEvent } from './types.js';
 import { takeSnapshot, applySnapshot, saveCurrentState, loadCurrentState } from './Presets.js';
 import { MidiOutput } from './audio/MidiOutput.js';
@@ -576,7 +576,7 @@ export class App {
     }
 
     // ── Rotation ──
-    c.rotationDirection = pick(['clockwise', 'counterclockwise', 'alternating', 'pingpong']);
+    c.rotationDirection = pick(ROTATION_DIRECTIONS);
 
     // ── Scale & note range ──
     const scales = getAllScales();
@@ -597,8 +597,7 @@ export class App {
     c.speedMultiplier = snap(range(0.3, 2.0), 0.1);
 
     // ── Color scheme ──
-    const schemeKeys = ['rainbow', 'harmonic', 'neon', 'aurora', 'fire', 'pastel', 'mono', 'ocean', 'sunset', 'forest'];
-    rc.colorScheme.name = pick(schemeKeys);
+    rc.colorScheme.name = pick([...COLOR_SCHEMES]);
     rc.colorScheme.saturationMultiplier = range(0.3, 1);
     rc.colorScheme.brightnessMultiplier = range(0.5, 1);
 
@@ -612,7 +611,7 @@ export class App {
     rc.pathLine.opacity = range(0.2, 0.8);
 
     // ── Trails ──
-    rc.trail.mode = pick(['ribbon', 'particle', 'none']);
+    rc.trail.mode = pick(TRAIL_MODES);
     rc.trail.width = snap(range(1, 12), 0.5);
     rc.trail.lifetime = snap(range(0.3, 3), 0.1);
     rc.trail.opacity = range(0.3, 0.9);

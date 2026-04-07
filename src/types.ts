@@ -4,6 +4,10 @@ export type RotationDirection = 'clockwise' | 'counterclockwise' | 'alternating'
 export type Arrangement = 'circular' | 'spiral' | 'concentric';
 export type TrailMode = 'ribbon' | 'particle' | 'none';
 
+export const ROTATION_DIRECTIONS: RotationDirection[] = ['clockwise', 'counterclockwise', 'alternating', 'pingpong'];
+export const TRAIL_MODES: TrailMode[] = ['ribbon', 'particle', 'none'];
+export const COLOR_SCHEMES = ['rainbow', 'harmonic', 'neon', 'aurora', 'fire', 'pastel', 'mono', 'ocean', 'sunset', 'forest'] as const;
+
 // ─── Core simulation data ───────────────────────────────────────────
 
 export interface DotState {
