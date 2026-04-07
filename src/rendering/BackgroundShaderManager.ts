@@ -38,6 +38,7 @@ export interface BackgroundShaderDef {
 
 const SHADERTOY_PREAMBLE = `
 // ── Shadertoy compatibility layer ──
+in vec2 v_fbUV; // FBO-correct UV for texture readback (no y-flip)
 uniform vec3  iResolution;
 uniform float iTime;
 uniform float iTimeDelta;
@@ -76,6 +77,7 @@ void main() {
 
 // For Whitney native shaders (already have main, use v_texCoord)
 const NATIVE_PREAMBLE = `
+in vec2 v_fbUV; // FBO-correct UV for texture readback (no y-flip)
 uniform vec2  u_resolution;
 uniform float u_time;
 uniform float u_cycleProgress;
@@ -105,9 +107,12 @@ const FULLSCREEN_VERT = `#version 300 es
 precision highp float;
 layout(location = 0) in vec2 a_position;
 out vec2 v_texCoord;
+out vec2 v_fbUV;
 void main() {
-  // v_texCoord (0,0) at top-left to match oF convention
+  // v_texCoord (0,0) at top-left to match oF convention (for pixel calculations)
   v_texCoord = vec2(a_position.x * 0.5 + 0.5, 0.5 - a_position.y * 0.5);
+  // v_fbUV (0,0) at bottom-left, matches GL texel layout (for FBO texture readback)
+  v_fbUV = a_position * 0.5 + 0.5;
   gl_Position = vec4(a_position, 0.0, 1.0);
 }`;
 

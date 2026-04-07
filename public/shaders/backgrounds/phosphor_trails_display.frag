@@ -12,10 +12,8 @@ uniform sampler2D u_simState;
 uniform float u_ioBrightness;
 
 void main() {
-    vec2 uv = v_texCoord;
-
-    // Read accumulated trails
-    vec3 trails = texture(u_simState, uv).rgb;
+    // Read accumulated trails (v_fbUV matches GL texel layout for correct FBO readback)
+    vec3 trails = texture(u_simState, v_fbUV).rgb;
     vec3 color = u_backgroundColor + trails;
 
     fragColor = vec4(clamp(color, 0.0, 1.0), 1.0);

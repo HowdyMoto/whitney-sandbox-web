@@ -33,8 +33,8 @@ void main() {
     vec2 uv = v_texCoord;
     vec2 pixel = uv * u_resolution;
 
-    // Read previous frame and decay
-    vec3 prev = texture(u_prevState, uv).rgb * u_ioTrailDecay;
+    // Read previous frame and decay (v_fbUV matches GL texel layout for correct FBO readback)
+    vec3 prev = texture(u_prevState, v_fbUV).rgb * u_ioTrailDecay;
 
     // Deposit trail points at each dot's current position
     float invR2 = 1.0 / (u_ioLineWidth * u_ioLineWidth);
