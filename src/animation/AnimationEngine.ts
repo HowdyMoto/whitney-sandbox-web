@@ -235,7 +235,7 @@ export class AnimationEngine {
     if (mode && this.modeLoader) {
       // Use expression-based mode
       this.modeLoader.setContext(this.ctx, mode, i, numDots, speed,
-        cycleProgress, localT, phase, cx, cy, maxRadius, screenW, screenH);
+        cycleProgress, localT, phase, cx, cy, maxRadius, screenW, screenH, config.modeParams);
 
       const pos = this.modeLoader.evalPosition(mode, this.ctx);
       x = pos.x;

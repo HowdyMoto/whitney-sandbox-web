@@ -190,6 +190,7 @@ export class CustomModeLoader {
     cycleProgress: number, localT: number, phase: number,
     cx: number, cy: number, maxRadius: number,
     screenW: number, screenH: number,
+    modeParams?: Record<string, number>,
   ): void {
     const t = i / Math.max(numDots, 1);
     ctx.i = i;
@@ -205,6 +206,13 @@ export class CustomModeLoader {
     ctx.screenW = screenW;
     ctx.screenH = screenH;
     ctx.sweep = 0;
+
+    // Set mode-specific parameters in context
+    if (modeParams) {
+      for (const [key, value] of Object.entries(modeParams)) {
+        ctx[key] = value;
+      }
+    }
   }
 
   // ─── Evaluation ─────────────────────────────────────────────────

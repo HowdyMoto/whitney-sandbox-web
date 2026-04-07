@@ -479,12 +479,12 @@ export class App {
 .edge-tab {
   position: fixed;
   left: 0; top: 50%; transform: translateY(-50%);
-  width: 20px; height: 56px;
+  width: 50px; height: 100px;
   background: rgba(255,255,255,0.06);
   border: none;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 20px 20px 0;
   color: rgba(255,255,255,0.3);
-  font-size: 14px;
+  font-size: 28px;
   cursor: pointer;
   z-index: 40;
   display: flex; align-items: center; justify-content: center;
@@ -499,7 +499,7 @@ export class App {
 }
 .edge-tab.near,
 .edge-tab:hover {
-  width: 28px;
+  width: 60px;
   background: rgba(255,255,255,0.12);
   color: rgba(255,255,255,0.7);
 }
