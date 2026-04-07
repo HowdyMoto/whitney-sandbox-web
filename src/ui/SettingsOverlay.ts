@@ -293,7 +293,7 @@ export class SettingsOverlay {
     this.addSectionHeader('Burst Particles');
     this.addCheckbox('Emit on trigger', rc.particle.emitOnTrigger, v => { rc.particle.emitOnTrigger = v; this.changed(); this.rebuild(); });
     if (rc.particle.emitOnTrigger) {
-      this.addSlider('Burst Count', rc.particle.burstCount, 1, 50, 1, v => { rc.particle.burstCount = v; this.changed(); });
+      this.addSlider('Burst Count', rc.particle.burstCount, 1, 64, 1, v => { rc.particle.burstCount = v; this.changed(); });
       this.addSlider('Speed', rc.particle.speed, 10, 300, 1, v => { rc.particle.speed = v; this.changed(); });
       this.addSlider('Lifetime', rc.particle.lifetime, 0.1, 10, 0.1, v => { rc.particle.lifetime = v; this.changed(); }, v => `${v.toFixed(1)}s`);
       this.addSlider('Size', rc.particle.size, 1, 64, 0.5, v => { rc.particle.size = v; this.changed(); });
