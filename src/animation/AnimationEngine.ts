@@ -5,7 +5,7 @@ import type { CustomModeLoader, CompiledMode, ModeContext } from './CustomModeLo
 
 const TWO_PI = Math.PI * 2;
 const TRIGGER_ANGLE = Math.PI / 2;
-const CYCLE_THRESHOLD = 0.015;
+const CYCLE_THRESHOLD = 0.005;
 const VISUAL_CYCLE_THRESHOLD = 0.005;
 const ANIMATION_DECAY = 0.92;
 

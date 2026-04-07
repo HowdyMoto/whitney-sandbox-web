@@ -288,7 +288,12 @@ export function applySnapshot(
   setShaderParams: (params: Record<string, Record<string, number>>) => void,
 ): void {
   // Config — copy only known keys to avoid stale fields
+  // Preserve session-only state that shouldn't be overwritten by presets
+  const savedSoundEnabled = config.soundEnabled;
+  const savedVolume = config.volume;
   Object.assign(config, snapshot.config);
+  config.soundEnabled = savedSoundEnabled;
+  config.volume = savedVolume;
   // RenderConfig — deep merge
   Object.assign(renderConfig.backgroundColor, snapshot.renderConfig.backgroundColor);
   Object.assign(renderConfig.dot, snapshot.renderConfig.dot);
