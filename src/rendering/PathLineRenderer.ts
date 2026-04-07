@@ -186,7 +186,7 @@ export class PathLineRenderer {
       const totalSamples = Math.min(CURVE_SEGMENTS_PER_LOOP * speed, 2048);
 
       this.modeLoader.setContext(this.ctx, mode, i, numDots, speed,
-        0, 0, 0, cx, cy, maxRadius, canvasW, canvasH, config.modeParams);
+        0, 0, 0, cx, cy, maxRadius, canvasW, canvasH);
 
       const points = this.modeLoader.samplePath(mode, this.ctx, totalSamples);
 
@@ -253,7 +253,7 @@ export class PathLineRenderer {
       const anim = triggerConfig.pulse ? dot.triggerAnimation : 0;
 
       this.modeLoader.setContext(this.ctx, mode, i, numDots, i + 1,
-        0, 0, 0, cx, cy, maxRadius, canvasW, canvasH, config.modeParams);
+        0, 0, 0, cx, cy, maxRadius, canvasW, canvasH);
       const markers = this.modeLoader.evalMarkers(mode, this.ctx);
 
       // Find closest marker to the dot (for multi-marker modes)

@@ -168,6 +168,7 @@ export class AnimationEngine {
       const result = this.computeForMode(dot, i, numDots, cycleProgress, config, screenW, screenH, cx, cy, maxRadius, mode);
       this.cachedResults[i] = result;
 
+
       dot.triggered = result.isAtVisualTrigger;
 
       if (isPlaying && result.isAtTrigger && !this.lastTriggerState[i]) {
@@ -235,7 +236,7 @@ export class AnimationEngine {
     if (mode && this.modeLoader) {
       // Use expression-based mode
       this.modeLoader.setContext(this.ctx, mode, i, numDots, speed,
-        cycleProgress, localT, phase, cx, cy, maxRadius, screenW, screenH, config.modeParams);
+        cycleProgress, localT, phase, cx, cy, maxRadius, screenW, screenH);
 
       const pos = this.modeLoader.evalPosition(mode, this.ctx);
       x = pos.x;
