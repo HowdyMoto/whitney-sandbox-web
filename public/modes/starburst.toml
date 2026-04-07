@@ -9,8 +9,8 @@ min = 0.5
 max = 3.0
 
 [position]
-x = "cx + amplitude * pow(sin(pi() * localT), pulseShape) * cos(t * two_pi())"
-y = "cy - amplitude * pow(sin(pi() * localT), pulseShape) * sin(t * two_pi())"
+x = "cx + amplitude * sin(pi() * localT) ^ pulseShape * cos(t * two_pi())"
+y = "cy - amplitude * sin(pi() * localT) ^ pulseShape * sin(t * two_pi())"
 
 [trigger]
 value = "localT"

@@ -5,7 +5,6 @@ const createScope = (vars: Record<string, number> = {}) => ({
   ...vars,
   pi: () => Math.PI,
   two_pi: () => Math.PI * 2,
-  pow: (base: number, exp: number) => Math.pow(base, exp),
   fmod: (a: number, b: number) => a - Math.floor(a / b) * b,
   if: (cond: number, a: number, b: number) => cond ? a : b,
 });

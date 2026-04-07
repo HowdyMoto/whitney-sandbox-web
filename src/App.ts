@@ -480,16 +480,16 @@ export class App {
   position: fixed;
   left: 0; top: 50%; transform: translateY(-50%);
   width: 50px; height: 50px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.12);
   border: none;
   border-radius: 0 50px 50px 0;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.5);
   font-size: 28px;
   cursor: pointer;
   z-index: 40;
   display: flex; align-items: center; justify-content: center;
   opacity: 0;
-  transition: opacity 0.4s, width 0.2s, background 0.2s, color 0.2s;
+  transition: opacity 0.4s, background 0.05s, color 0.05s;
   pointer-events: none;
   padding: 0;
 }
@@ -499,9 +499,8 @@ export class App {
 }
 .edge-tab.near,
 .edge-tab:hover {
-  width: 60px;
-  background: rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.9);
 }
 .edge-tab:active {
   background: rgba(255,255,255,0.2);
