@@ -61,6 +61,9 @@ export class PathLineRenderer {
     cx: 0, cy: 0, maxRadius: 0, amplitude: 0, screenW: 0, screenH: 0, sweep: 0,
   };
 
+  // Reusable normals buffer to avoid per-dot allocation
+  private normalsBuffer = new Float32Array(4096 * 2);
+
   private modeLoader: CustomModeLoader | null = null;
 
   constructor(gl: WebGL2RenderingContext) {
@@ -206,8 +209,13 @@ export class PathLineRenderer {
       const closeDy = points[n - 1]!.y - points[0]!.y;
       const isClosed = (closeDx * closeDx + closeDy * closeDy) < 1;
 
-      // Compute per-vertex averaged normals for smooth joins
-      const normals = new Float32Array(n * 2);
+      // Compute per-vertex averaged normals for smooth joins (reuse buffer)
+      const needed = n * 2;
+      if (this.normalsBuffer.length < needed) {
+        this.normalsBuffer = new Float32Array(needed);
+      }
+      const normals = this.normalsBuffer;
+      normals.fill(0, 0, needed);
       for (let v = 0; v < n; v++) {
         let nnx = 0, nny = 0;
         // Incoming segment (prev → v)
@@ -251,8 +259,8 @@ export class PathLineRenderer {
         // Triangle 2
         positions.push(p0.x - ox0, p0.y - oy0, p1.x + ox1, p1.y + oy1, p1.x - ox1, p1.y - oy1);
 
-        const c = [r, g, b, pathConfig.opacity];
-        colors.push(...c, ...c, ...c, ...c, ...c, ...c);
+        const a = pathConfig.opacity;
+        colors.push(r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a);
       }
     }
 

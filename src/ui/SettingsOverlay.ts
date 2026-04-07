@@ -5,6 +5,7 @@ import { getAllInstruments } from '../audio/InstrumentLibrary.js';
 import type { CustomModeLoader } from '../animation/CustomModeLoader.js';
 import type { BackgroundShaderManager } from '../rendering/BackgroundShaderManager.js';
 import { takeSnapshot, applySnapshot, savePreset, deletePreset, getPresets, BUILT_IN_PRESETS } from '../Presets.js';
+import type { Snapshot } from '../Presets.js';
 
 // ─── Color scheme display names ─────────────────────────────────
 const COLOR_SCHEMES: { key: string; label: string }[] = [
@@ -34,8 +35,9 @@ export class SettingsOverlay {
   private bloomConfig!: BloomConfig;
   private modeLoader: CustomModeLoader | null = null;
   private bgShaderManager: BackgroundShaderManager | null = null;
+  private loadingOverlay: HTMLDivElement;
   private onChange: (() => void) | null = null;
-  private onInstrumentChange: ((key: string) => void) | null = null;
+  private onInstrumentChange: ((key: string) => Promise<void>) | null = null;
   private onToggle: (() => void) | null = null;
 
   constructor() {
@@ -61,6 +63,12 @@ export class SettingsOverlay {
     });
     this.root.appendChild(this.edgeTab);
 
+    // Loading overlay (fullscreen, above everything)
+    this.loadingOverlay = document.createElement('div');
+    this.loadingOverlay.className = 'settings-loading';
+    this.loadingOverlay.innerHTML = '<div class="settings-loading-spinner"></div><span>Loading…</span>';
+    document.body.appendChild(this.loadingOverlay);
+
     this.buildShell();
     document.body.appendChild(this.root);
     this.injectStyles();
@@ -72,7 +80,7 @@ export class SettingsOverlay {
     modeLoader: CustomModeLoader | null,
     bgShaderManager: BackgroundShaderManager | null,
     onChange: () => void,
-    onInstrumentChange: (key: string) => void,
+    onInstrumentChange: (key: string) => Promise<void>,
     onToggle?: () => void,
   ): void {
     this.config = config;
@@ -107,6 +115,29 @@ export class SettingsOverlay {
   }
 
   isVisible(): boolean { return this.visible; }
+
+  async showLoadingDuring(fn: () => Promise<void>): Promise<void> {
+    this.loadingOverlay.classList.add('visible');
+    // Double rAF ensures browser paints the spinner
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await fn();
+    // Wait two more frames so the first post-change render completes behind the spinner
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    this.loadingOverlay.classList.remove('visible');
+  }
+
+  private async loadPresetSnapshot(snapshot: Snapshot): Promise<void> {
+    await this.showLoadingDuring(async () => {
+      applySnapshot(
+        snapshot,
+        this.config, this.renderConfig, this.bloomConfig,
+        (p) => this.bgShaderManager?.setAllParams(p),
+      );
+      this.changed();
+      await this.onInstrumentChange?.(this.config.instrument);
+    });
+    this.rebuild();
+  }
 
   rebuild(): void {
     if (!this.visible || !this.config) return;
@@ -441,16 +472,7 @@ export class SettingsOverlay {
       const loadBtn = document.createElement('button');
       loadBtn.className = 'preset-action-btn';
       loadBtn.textContent = 'Load';
-      loadBtn.addEventListener('click', () => {
-        applySnapshot(
-          preset.snapshot,
-          this.config, this.renderConfig, this.bloomConfig,
-          (p) => this.bgShaderManager?.setAllParams(p),
-        );
-        this.changed();
-        this.onInstrumentChange?.(this.config.instrument);
-        this.rebuild();
-      });
+      loadBtn.addEventListener('click', () => this.loadPresetSnapshot(preset.snapshot));
 
       row.appendChild(label);
       row.appendChild(loadBtn);
@@ -472,16 +494,7 @@ export class SettingsOverlay {
         const loadBtn = document.createElement('button');
         loadBtn.className = 'preset-action-btn';
         loadBtn.textContent = 'Load';
-        loadBtn.addEventListener('click', () => {
-          applySnapshot(
-            preset.snapshot,
-            this.config, this.renderConfig, this.bloomConfig,
-            (p) => this.bgShaderManager?.setAllParams(p),
-          );
-          this.changed();
-          this.onInstrumentChange?.(this.config.instrument);
-          this.rebuild();
-        });
+        loadBtn.addEventListener('click', () => this.loadPresetSnapshot(preset.snapshot));
 
         const delBtn = document.createElement('button');
         delBtn.className = 'preset-action-btn preset-delete-btn';
@@ -841,6 +854,35 @@ export class SettingsOverlay {
 }
 .settings-edge-tab:active {
   background: rgba(60, 60, 60, 0.96);
+}
+
+.settings-loading {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.8);
+  font-size: 14px;
+  font-family: 'Outfit', system-ui, sans-serif;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.settings-loading.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.settings-loading-spinner {
+  width: 28px; height: 28px;
+  border: 3px solid rgba(255,255,255,0.15);
+  border-top-color: rgba(255,255,255,0.7);
+  border-radius: 50%;
+  animation: settings-spin 0.7s linear infinite;
+}
+@keyframes settings-spin {
+  to { transform: rotate(360deg); }
 }
 
 .settings-tabs {

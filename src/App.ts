@@ -480,6 +480,10 @@ export class App {
   }
 
   private randomizeMode(): void {
+    this.settingsOverlay.showLoadingDuring(() => this.doRandomize());
+  }
+
+  private async doRandomize(): Promise<void> {
     // When adding new settings to the app, remember to add randomization ranges here!
     const rand = Math.random;
     const pick = <T>(arr: T[]): T => arr[Math.floor(rand() * arr.length)]!;
@@ -524,7 +528,7 @@ export class App {
     const instruments = getAllInstruments();
     const newInstrument = pick(instruments).key;
     if (newInstrument !== c.instrument) {
-      this.switchInstrument(newInstrument);
+      await this.switchInstrument(newInstrument);
     }
 
     // ── Timing ──
