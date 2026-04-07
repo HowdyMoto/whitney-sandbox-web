@@ -75,7 +75,7 @@ export function getMidiNoteForDot(dotIndex: number, scaleName: string, lowMidi: 
   const octaveOffset = Math.floor(dotIndex / len);
   const degree = dotIndex % len;
   const midiNote = lowMidi + scale.intervals[degree]! + octaveOffset * 12;
-  return midiNote > highMidi ? lowMidi : midiNote;
+  return Math.min(highMidi, Math.max(lowMidi, midiNote));
 }
 
 export function countNotesInRange(scaleName: string, lowMidi: number, highMidi: number): number {
