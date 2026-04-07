@@ -29,8 +29,9 @@ in vec4 v_color;
 in float v_edgeDistance;
 out vec4 fragColor;
 void main() {
-  float alpha = v_color.a * smoothstep(1.0, 0.0, v_edgeDistance);
-  fragColor = vec4(v_color.rgb, v_color.a * alpha);
+  // Smooth fade near edges: 0.5 = fully opaque, >1.0 = fading
+  float edgeFade = smoothstep(1.2, 0.5, v_edgeDistance);
+  fragColor = vec4(v_color.rgb, v_color.a * edgeFade);
 }`;
 
 export class PathLineRenderer {
@@ -250,8 +251,11 @@ export class PathLineRenderer {
         const c = [r, g, b, pathConfig.opacity];
         colors.push(...c, ...c, ...c, ...c, ...c, ...c);
 
-        // Edge distances: all exterior vertices get 1.0 (will fade smoothly)
-        edgeDistances.push(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+        // Edge distances: outer vertices fade, inner stay opaque
+        // Triangle 1: outer, outer, outer
+        edgeDistances.push(1.1, 1.1, 1.1);
+        // Triangle 2: outer, outer, outer
+        edgeDistances.push(1.1, 1.1, 1.1);
       }
     }
 
