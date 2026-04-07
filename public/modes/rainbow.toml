@@ -3,10 +3,11 @@ description = "Dots travel along concentric semicircular arcs like a rainbow"
 supportsRotation = false
 
 [params.sweepMode]
-label = "Sweep (0=Bounce 1=OneWay)"
+label = "Sweep Mode"
 default = 0.0
 min = 0.0
 max = 1.0
+options = [["Bounce", 0.0], ["One Way", 1.0]]
 
 [position]
 x = "cx + (min(screenW, screenH) * (0.1 + t * 0.35)) * cos(pi() * (1 - if(sweepMode > 0.5, localT, if(localT < 0.5, localT * 2, (1 - localT) * 2))))"

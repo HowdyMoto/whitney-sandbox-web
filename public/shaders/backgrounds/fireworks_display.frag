@@ -27,29 +27,31 @@ float hash21(vec2 p) {
 // -------------------------------------------------------
 // Multi-scale bloom — fixed radii, u_bloom controls intensity
 // -------------------------------------------------------
-vec3 sampleBloom(vec2 uv, float radius) {
+// Use v_fbUV (GL convention, no Y-flip) for all FBO texture reads
+vec3 sampleBloom(vec2 fbUV, float radius) {
     vec2 ts = u_texelSize * radius;
-    vec3 s  = texture(u_simState, uv).rgb * 4.0;
-    s += texture(u_simState, uv + vec2( ts.x, 0.0)).rgb * 2.0;
-    s += texture(u_simState, uv - vec2( ts.x, 0.0)).rgb * 2.0;
-    s += texture(u_simState, uv + vec2(0.0,  ts.y)).rgb * 2.0;
-    s += texture(u_simState, uv - vec2(0.0,  ts.y)).rgb * 2.0;
-    s += texture(u_simState, uv + vec2( ts.x,  ts.y)).rgb;
-    s += texture(u_simState, uv - vec2( ts.x,  ts.y)).rgb;
-    s += texture(u_simState, uv + vec2( ts.x, -ts.y)).rgb;
-    s += texture(u_simState, uv - vec2( ts.x, -ts.y)).rgb;
+    vec3 s  = texture(u_simState, fbUV).rgb * 4.0;
+    s += texture(u_simState, fbUV + vec2( ts.x, 0.0)).rgb * 2.0;
+    s += texture(u_simState, fbUV - vec2( ts.x, 0.0)).rgb * 2.0;
+    s += texture(u_simState, fbUV + vec2(0.0,  ts.y)).rgb * 2.0;
+    s += texture(u_simState, fbUV - vec2(0.0,  ts.y)).rgb * 2.0;
+    s += texture(u_simState, fbUV + vec2( ts.x,  ts.y)).rgb;
+    s += texture(u_simState, fbUV - vec2( ts.x,  ts.y)).rgb;
+    s += texture(u_simState, fbUV + vec2( ts.x, -ts.y)).rgb;
+    s += texture(u_simState, fbUV - vec2( ts.x, -ts.y)).rgb;
     return s / 16.0;
 }
 
 void main() {
     vec2 uv = v_texCoord;
+    vec2 fbUV = v_fbUV; // GL convention for FBO readback
 
-    vec3 sharp = texture(u_simState, uv).rgb;
+    vec3 sharp = texture(u_simState, fbUV).rgb;
 
     // Three fixed-radius bloom taps
-    vec3 bloom1 = sampleBloom(uv, 3.0);        // near glow
-    vec3 bloom2 = sampleBloom(uv, 9.0);        // mid glow
-    vec3 bloom3 = sampleBloom(uv, 21.0);       // atmospheric haze
+    vec3 bloom1 = sampleBloom(fbUV, 3.0);        // near glow
+    vec3 bloom2 = sampleBloom(fbUV, 9.0);        // mid glow
+    vec3 bloom3 = sampleBloom(fbUV, 21.0);       // atmospheric haze
 
     vec3 bloomTotal = bloom1 * 0.50
                     + bloom2 * 0.30

@@ -48,7 +48,8 @@ void main() {
     vec2 uv    = v_texCoord;
     vec2 pixel = uv * u_resolution;
 
-    vec3 accum = texture(u_prevState, uv).rgb * u_trailDecay;
+    // Use v_fbUV for FBO readback (GL convention, no Y-flip)
+    vec3 accum = texture(u_prevState, v_fbUV).rgb * u_trailDecay;
 
     const float MAX_AGE     = 3.5;
     const float BASE_DRAG   = 2.2;

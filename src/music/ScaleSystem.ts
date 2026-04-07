@@ -71,11 +71,14 @@ export function getScale(name: string): ScaleDefinition {
 
 export function getMidiNoteForDot(dotIndex: number, scaleName: string, lowMidi: number, highMidi: number): number {
   const scale = getScale(scaleName);
+  const total = countNotesInRange(scaleName, lowMidi, highMidi);
+  if (total <= 0) return lowMidi;
+  // Wrap dot index so extra dots cycle through available notes
+  const wrappedIndex = dotIndex % total;
   const len = scale.intervals.length;
-  const octaveOffset = Math.floor(dotIndex / len);
-  const degree = dotIndex % len;
-  const midiNote = lowMidi + scale.intervals[degree]! + octaveOffset * 12;
-  return Math.min(highMidi, Math.max(lowMidi, midiNote));
+  const octaveOffset = Math.floor(wrappedIndex / len);
+  const degree = wrappedIndex % len;
+  return lowMidi + scale.intervals[degree]! + octaveOffset * 12;
 }
 
 export function countNotesInRange(scaleName: string, lowMidi: number, highMidi: number): number {

@@ -4,6 +4,11 @@ import type { CompiledExpression } from './ExpressionEngine.js';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
+export interface CustomModeParamOption {
+  label: string;
+  value: number;
+}
+
 export interface CustomModeParam {
   name: string;
   label: string;
@@ -11,6 +16,7 @@ export interface CustomModeParam {
   minVal: number;
   maxVal: number;
   step: number;
+  options: CustomModeParamOption[];  // if non-empty, render as dropdown
 }
 
 interface MarkerExpr {
@@ -105,6 +111,17 @@ export class CustomModeLoader {
       if (params) {
         for (const [paramName, paramDef] of Object.entries(params)) {
           if (mode.paramDefs.length >= 8) break;
+          // Parse options: array of [label, value] pairs
+          const rawOptions = paramDef['options'] as Array<[string, number]> | undefined;
+          const options: CustomModeParamOption[] = [];
+          if (Array.isArray(rawOptions)) {
+            for (const opt of rawOptions) {
+              if (Array.isArray(opt) && opt.length >= 2) {
+                options.push({ label: String(opt[0]), value: Number(opt[1]) });
+              }
+            }
+          }
+
           mode.paramDefs.push({
             name: paramName,
             label: (paramDef['label'] as string) ?? paramName,
@@ -112,6 +129,7 @@ export class CustomModeLoader {
             minVal: Number(paramDef['min'] ?? 0),
             maxVal: Number(paramDef['max'] ?? 1),
             step: Number(paramDef['step'] ?? 0),
+            options,
           });
         }
       }
@@ -185,13 +203,17 @@ export class CustomModeLoader {
   // ─── Context setup ─────────────────────────────────────────────
 
   setContext(
-    ctx: ModeContext, _mode: CompiledMode,
+    ctx: ModeContext, mode: CompiledMode,
     i: number, numDots: number, speed: number,
     cycleProgress: number, localT: number, phase: number,
     cx: number, cy: number, maxRadius: number,
     screenW: number, screenH: number,
   ): void {
-    const t = i / Math.max(numDots, 1);
+    // Linear modes: t spans [0, 1] inclusive so endpoints are symmetric.
+    // Circular modes: t spans [0, 1) so the last dot doesn't overlap the first.
+    const t = mode.isLinear
+      ? i / Math.max(numDots - 1, 1)
+      : i / Math.max(numDots, 1);
     ctx.i = i;
     ctx.t = t;
     ctx.speed = speed;

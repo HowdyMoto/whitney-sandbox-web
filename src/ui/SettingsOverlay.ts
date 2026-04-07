@@ -4,7 +4,7 @@ import { getAllScales, midiToNoteName, countNotesInRange } from '../music/ScaleS
 import { getAllInstruments } from '../audio/InstrumentLibrary.js';
 import type { CustomModeLoader } from '../animation/CustomModeLoader.js';
 import type { BackgroundShaderManager } from '../rendering/BackgroundShaderManager.js';
-import { takeSnapshot, applySnapshot, savePreset, deletePreset, getPresets } from '../Presets.js';
+import { takeSnapshot, applySnapshot, savePreset, deletePreset, getPresets, BUILT_IN_PRESETS } from '../Presets.js';
 
 // ─── Color scheme display names ─────────────────────────────────
 const COLOR_SCHEMES: { key: string; label: string }[] = [
@@ -212,9 +212,18 @@ export class SettingsOverlay {
     if (mode) {
       for (const p of mode.paramDefs) {
         const val = c.modeParams[p.name] ?? p.defaultVal;
-        this.addSlider(p.label, val, p.minVal, p.maxVal, p.step || 0.01,
-          v => { c.modeParams[p.name] = v; this.changed(); },
-          v => p.step >= 1 ? v.toFixed(0) : v.toFixed(1));
+        if (p.options.length > 0) {
+          // Dropdown for params with named options
+          const items = p.options.map(o => ({ value: String(o.value), label: o.label }));
+          this.addSelect(p.label, items, String(val), v => {
+            c.modeParams[p.name] = Number(v);
+            this.changed();
+          });
+        } else {
+          this.addSlider(p.label, val, p.minVal, p.maxVal, p.step || 0.01,
+            v => { c.modeParams[p.name] = v; this.changed(); },
+            v => p.step >= 1 ? v.toFixed(0) : v.toFixed(1));
+        }
       }
     }
 
@@ -255,7 +264,7 @@ export class SettingsOverlay {
 
     // Dots
     this.addSectionHeader('Dots');
-    this.addSlider('Size', rc.dot.size, 2, 40, 1, v => { rc.dot.size = v; this.changed(); });
+    this.addSlider('Size', rc.dot.size, 8, 40, 1, v => { rc.dot.size = v; this.changed(); });
     this.addCheckbox('Glow', rc.dot.showGlow, v => { rc.dot.showGlow = v; this.changed(); this.rebuild(); });
     if (rc.dot.showGlow) {
       this.addSlider('Glow Opacity', rc.dot.glowOpacity, 0, 1, 0.01,
@@ -400,10 +409,39 @@ export class SettingsOverlay {
     saveRow.appendChild(saveBtn);
     this.tabContent.appendChild(saveRow);
 
+    // Built-in presets
+    this.addSectionHeader('Built-in Presets');
+    for (const preset of BUILT_IN_PRESETS) {
+      const row = document.createElement('div');
+      row.className = 'settings-row preset-row';
+
+      const label = document.createElement('span');
+      label.className = 'preset-label';
+      label.textContent = preset.name;
+
+      const loadBtn = document.createElement('button');
+      loadBtn.className = 'preset-action-btn';
+      loadBtn.textContent = 'Load';
+      loadBtn.addEventListener('click', () => {
+        applySnapshot(
+          preset.snapshot,
+          this.config, this.renderConfig, this.bloomConfig,
+          (p) => this.bgShaderManager?.setAllParams(p),
+        );
+        this.changed();
+        this.onInstrumentChange?.(this.config.instrument);
+        this.rebuild();
+      });
+
+      row.appendChild(label);
+      row.appendChild(loadBtn);
+      this.tabContent.appendChild(row);
+    }
+
     // List saved presets
     const presets = getPresets();
     if (presets.length > 0) {
-      this.addSectionHeader('Saved Presets');
+      this.addSectionHeader('My Presets');
       for (const preset of presets) {
         const row = document.createElement('div');
         row.className = 'settings-row preset-row';
