@@ -479,10 +479,10 @@ export class App {
 .edge-tab {
   position: fixed;
   left: 0; top: 50%; transform: translateY(-50%);
-  width: 50px; height: 100px;
+  width: 50px; height: 50px;
   background: rgba(255,255,255,0.06);
   border: none;
-  border-radius: 0 20px 20px 0;
+  border-radius: 0 50px 50px 0;
   color: rgba(255,255,255,0.3);
   font-size: 28px;
   cursor: pointer;
