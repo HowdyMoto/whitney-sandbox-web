@@ -546,6 +546,7 @@ export class App {
   }
 
   private randomizeMode(): void {
+    // When adding new settings to the app, remember to add randomization ranges here!
     const rand = Math.random;
     const pick = <T>(arr: T[]): T => arr[Math.floor(rand() * arr.length)]!;
     const range = (min: number, max: number) => min + rand() * (max - min);
@@ -606,6 +607,10 @@ export class App {
     rc.dot.size = snap(range(4, 24), 1);
     rc.dot.showGlow = rand() > 0.5;
     rc.dot.glowOpacity = range(0.2, 0.8);
+
+    // ── Path Lines ──
+    rc.pathLine.width = snap(range(0.5, 8), 0.5);
+    rc.pathLine.opacity = range(0.2, 0.8);
 
     // ── Trails ──
     rc.trail.mode = pick(['ribbon', 'particle', 'none']);
