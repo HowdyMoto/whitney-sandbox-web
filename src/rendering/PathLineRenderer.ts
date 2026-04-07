@@ -50,6 +50,8 @@ export class PathLineRenderer {
   private lastScreenH = -1;
   private lastAnimMode = '';
   private lastModeParamsStr = '';
+  private lastPathOpacity = -1;
+  private lastPathMonochrome = false;
   private needsRebuild = true;
 
   // Reusable context
@@ -111,7 +113,9 @@ export class PathLineRenderer {
       numDots !== this.lastNumDots ||
       canvasW !== this.lastScreenW || canvasH !== this.lastScreenH ||
       config.animationMode !== this.lastAnimMode ||
-      modeParamsStr !== this.lastModeParamsStr;
+      modeParamsStr !== this.lastModeParamsStr ||
+      pathConfig.opacity !== this.lastPathOpacity ||
+      pathConfig.monochrome !== this.lastPathMonochrome;
 
     if (fullRebuild) {
       this.buildPaths(dots, config, pathConfig, canvasW, canvasH);
@@ -120,6 +124,8 @@ export class PathLineRenderer {
       this.lastScreenH = canvasH;
       this.lastAnimMode = config.animationMode;
       this.lastModeParamsStr = modeParamsStr;
+      this.lastPathOpacity = pathConfig.opacity;
+      this.lastPathMonochrome = pathConfig.monochrome;
       this.needsRebuild = false;
     }
 
