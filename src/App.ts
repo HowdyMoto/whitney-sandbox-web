@@ -527,9 +527,7 @@ export class App {
     // ── Instrument ──
     const instruments = getAllInstruments();
     const newInstrument = pick(instruments).key;
-    if (newInstrument !== c.instrument) {
-      await this.switchInstrument(newInstrument);
-    }
+    await this.switchInstrument(newInstrument);
 
     // ── Timing ──
     c.cycleDuration = snap(range(30, 300), 1);

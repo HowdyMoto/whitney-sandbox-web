@@ -217,6 +217,7 @@ export class SettingsOverlay {
         this.changed();
       },
       midiToNoteName,
+      () => { this.onInstrumentChange?.(c.instrument); },
     );
 
     // Volume
@@ -567,6 +568,7 @@ export class SettingsOverlay {
     valueLow: number, valueHigh: number, min: number, max: number, minGap: number,
     onChange: (low: number, high: number) => void,
     formatLabel: (v: number) => string,
+    onChangeEnd?: () => void,
   ): void {
     const row = document.createElement('div');
     row.className = 'settings-row';
@@ -673,8 +675,11 @@ export class SettingsOverlay {
       update(e.clientX);
     });
     window.addEventListener('pointerup', () => {
-      dragging = null;
-      draw();
+      if (dragging) {
+        dragging = null;
+        draw();
+        onChangeEnd?.();
+      }
     });
 
     const update = (clientX: number) => {

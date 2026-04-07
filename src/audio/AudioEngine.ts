@@ -26,6 +26,8 @@ export class AudioEngine {
   private cancelToken = { cancelled: false };
 
   private currentInstrumentKey = '';
+  private loadedLowMidi = -1;
+  private loadedHighMidi = -1;
   private volume = 0.5;
   private enabled = true;
 
@@ -66,7 +68,7 @@ export class AudioEngine {
   }
 
   async switchInstrument(instrumentKey: string, lowMidi: number, highMidi: number): Promise<void> {
-    if (instrumentKey === this.currentInstrumentKey) return;
+    if (instrumentKey === this.currentInstrumentKey && lowMidi === this.loadedLowMidi && highMidi === this.loadedHighMidi) return;
 
     // Cancel any in-progress load
     this.cancelToken.cancelled = true;
@@ -76,6 +78,8 @@ export class AudioEngine {
     this.killAllVoices();
     this.samples.clear();
     this.currentInstrumentKey = instrumentKey;
+    this.loadedLowMidi = lowMidi;
+    this.loadedHighMidi = highMidi;
     this.loading = true;
     this.loadedCount = 0;
 
