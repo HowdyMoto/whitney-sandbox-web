@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /d/GitHub_HowdyMoto/whitney-sandbox-web/src/**/*.ts)"
+    ]
+  }
+}
