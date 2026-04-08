@@ -6,6 +6,7 @@ import type { CustomModeLoader } from '../animation/CustomModeLoader.js';
 import type { BackgroundShaderManager } from '../rendering/BackgroundShaderManager.js';
 import { takeSnapshot, applySnapshot, savePreset, deletePreset, getPresets, BUILT_IN_PRESETS } from '../Presets.js';
 import type { Snapshot } from '../Presets.js';
+import { downloadMidiFile } from '../audio/MidiFileWriter.js';
 
 // ─── Color scheme display names ─────────────────────────────────
 const COLOR_SCHEMES: { key: string; label: string }[] = [
@@ -21,7 +22,7 @@ const COLOR_SCHEMES: { key: string; label: string }[] = [
   { key: 'forest', label: 'Moss & Fern' },
 ];
 
-type TabName = 'music' | 'motion' | 'style' | 'background' | 'presets';
+type TabName = 'music' | 'motion' | 'style' | 'background' | 'library';
 
 export class SettingsOverlay {
   private root: HTMLDivElement;
@@ -148,7 +149,7 @@ export class SettingsOverlay {
       case 'motion': this.buildMotionTab(); break;
       case 'style': this.buildStyleTab(); break;
       case 'background': this.buildBackgroundTab(); break;
-      case 'presets': this.buildPresetsTab(); break;
+      case 'library': this.buildLibraryTab(); break;
     }
   }
 
@@ -163,7 +164,7 @@ export class SettingsOverlay {
       { key: 'motion', label: 'Motion' },
       { key: 'style', label: 'Style' },
       { key: 'background', label: 'BG' },
-      { key: 'presets', label: 'Presets' },
+      { key: 'library', label: 'Library' },
     ];
     for (const t of tabs) {
       const btn = document.createElement('button');
@@ -426,7 +427,34 @@ export class SettingsOverlay {
 
   // ─── Presets Tab ──────────────────────────────────────────────
 
-  private buildPresetsTab(): void {
+  private buildLibraryTab(): void {
+    // ── Export ──
+    this.addSectionHeader('Export');
+
+    const exportRow = document.createElement('div');
+    exportRow.className = 'settings-row';
+    exportRow.style.display = 'flex';
+    exportRow.style.gap = '6px';
+
+    const midiBtn = document.createElement('button');
+    midiBtn.className = 'preset-action-btn';
+    midiBtn.textContent = 'Download MIDI File';
+    midiBtn.style.flex = '1';
+    midiBtn.addEventListener('click', () => {
+      downloadMidiFile(this.config);
+    });
+
+    exportRow.appendChild(midiBtn);
+    this.tabContent.appendChild(exportRow);
+
+    const hint = document.createElement('div');
+    hint.className = 'settings-row';
+    hint.style.fontSize = '11px';
+    hint.style.opacity = '0.5';
+    hint.textContent = 'Exports one full cycle of the current pattern as a Standard MIDI file.';
+    this.tabContent.appendChild(hint);
+
+    // ── Presets ──
     // Save new preset
     this.addSectionHeader('Save Current Settings');
     const saveRow = document.createElement('div');
