@@ -488,26 +488,6 @@ export class SettingsOverlay {
     saveRow.appendChild(saveBtn);
     this.tabContent.appendChild(saveRow);
 
-    // Built-in presets
-    this.addSectionHeader('Built-in Presets');
-    for (const preset of BUILT_IN_PRESETS) {
-      const row = document.createElement('div');
-      row.className = 'settings-row preset-row';
-
-      const label = document.createElement('span');
-      label.className = 'preset-label';
-      label.textContent = preset.name;
-
-      const loadBtn = document.createElement('button');
-      loadBtn.className = 'preset-action-btn';
-      loadBtn.textContent = 'Load';
-      loadBtn.addEventListener('click', () => this.loadPresetSnapshot(preset.snapshot));
-
-      row.appendChild(label);
-      row.appendChild(loadBtn);
-      this.tabContent.appendChild(row);
-    }
-
     // List saved presets
     const presets = getPresets();
     if (presets.length > 0) {
@@ -539,6 +519,26 @@ export class SettingsOverlay {
         row.appendChild(delBtn);
         this.tabContent.appendChild(row);
       }
+    }
+
+    // Built-in presets
+    this.addSectionHeader('Built-in Presets');
+    for (const preset of BUILT_IN_PRESETS) {
+      const row = document.createElement('div');
+      row.className = 'settings-row preset-row';
+
+      const label = document.createElement('span');
+      label.className = 'preset-label';
+      label.textContent = preset.name;
+
+      const loadBtn = document.createElement('button');
+      loadBtn.className = 'preset-action-btn';
+      loadBtn.textContent = 'Load';
+      loadBtn.addEventListener('click', () => this.loadPresetSnapshot(preset.snapshot));
+
+      row.appendChild(label);
+      row.appendChild(loadBtn);
+      this.tabContent.appendChild(row);
     }
   }
 

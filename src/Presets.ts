@@ -239,6 +239,35 @@ export const BUILT_IN_PRESETS: NamedPreset[] = [
   },
 
   {
+    name: 'Spiderweb',
+    snapshot: {
+      config: {
+        numNotes: 39, cycleDuration: 137, speedMultiplier: 1, scale: 'augmented',
+        lowNote: 31, highNote: 107, volume: 0.5, soundEnabled: false, instrument: 'piano',
+        dotSize: 12, trailLength: 0.3, pulseOnTrigger: true,
+        animationMode: 'Spirograph', arrangement: 'circular',
+        rotationDirection: 'counterclockwise', backgroundShader: 'none',
+        modeParams: { petals: 12 },
+      },
+      renderConfig: {
+        backgroundColor: [0.010, 0.059, 0.046],
+        dot: { svgFile: 'circle.svg', size: 8, pulseScale: 0.6, showGlow: true, glowFile: 'glow.png', glowScale: 3, glowOpacity: 0.61 },
+        trail: { mode: 'ribbon', width: 5, lifetime: 0.6, opacity: 0.27, fadeExponent: 1.6,
+          particlesPerSecond: 50, particleSize: 1, particleLifetime: 1, particleSpread: 178, particleEjectSpeed: 1 },
+        pathLine: { show: true, width: 3, opacity: 0.26, monochrome: true, color: [0.5, 0.5, 0.5] },
+        triggerLine: { show: true, brightness: 0.25, size: 1, pulse: true, pulseBrightness: 3, monochrome: false, color: [1, 1, 1] },
+        noteText: { show: false, duration: 1.5, driftPixels: 30, fontSize: 14, opacity: 0.85 },
+        particle: { emitOnTrigger: false, burstCount: 28, speed: 49, lifetime: 0.5, size: 3.5, drag: 0.5, gravity: 1850, spriteFile: 'particle_soft.png' },
+        colorScheme: { name: 'ocean', saturationMultiplier: 0.46, brightnessMultiplier: 1.0 },
+      },
+      bloomConfig: { enabled: true, threshold: 0.29, intensity: 1.15, softKnee: 0.71 },
+      shaderParams: {
+        phosphor_trails: { u_ioLineWidth: 3.38, u_ioTrailDecay: 0.984, u_ioCircleSize: 29.5, u_ioBrightness: 0.40 },
+      },
+    },
+  },
+
+  {
     name: 'Horizon',
     snapshot: {
       config: {
