@@ -127,6 +127,9 @@ export class TrailRenderer {
     const fadeExp = config.fadeExponent;
     const opacity = config.opacity;
     const invNumDots = 1 / Math.max(numDots, 1);
+    // Break trail when a dot teleports (e.g. one-way sweep wrap)
+    const teleportThresh = Math.min(canvasW, canvasH) * 0.25;
+    const teleportThreshSq = teleportThresh * teleportThresh;
 
     for (let d = 0; d < numDots; d++) {
       const history = this.histories[d];
@@ -158,7 +161,9 @@ export class TrailRenderer {
 
         const dx = px - prevX;
         const dy = py - prevY;
-        const len = Math.sqrt(dx * dx + dy * dy);
+        const distSq = dx * dx + dy * dy;
+        if (distSq > teleportThreshSq) break; // teleport — stop trail here
+        const len = Math.sqrt(distSq);
         if (len < 0.001) {
           prevX = px; prevY = py;
           ringIdx = (ringIdx - 1 + MAX_HISTORY) % MAX_HISTORY;

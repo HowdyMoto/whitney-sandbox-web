@@ -14,7 +14,7 @@ x = "cx + (min(screenW, screenH) * (0.1 + t * 0.35)) * cos(pi() * (1 - if(sweepM
 y = "cy + min(screenW, screenH) * 0.225 - (min(screenW, screenH) * (0.1 + t * 0.35)) * sin(pi() * (1 - if(sweepMode > 0.5, localT, if(localT < 0.5, localT * 2, (1 - localT) * 2))))"
 
 [trigger]
-value = "if(localT < 0.5, localT, 1 - localT)"
+value = "if(sweepMode > 0.5, localT, fmod(cycleProgress * speed * 2, 1.0))"
 
 [marker.1]
 x = "cx - min(screenW, screenH) * (0.1 + t * 0.35)"
