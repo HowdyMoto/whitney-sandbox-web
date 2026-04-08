@@ -1,0 +1,27 @@
+name = "Billiard"
+description = "Dots bounce in straight lines inside a circle, tracing inscribed polygons"
+supportsRotation = false
+
+[params.sides]
+label = "Sides"
+default = 5.0
+min = 2.0
+max = 12.0
+step = 1.0
+
+[position]
+x = "cx + amplitude * ((1 - fmod(localT * sides, 1)) * cos(floor(localT * sides) * two_pi() / sides + pi()/2) + fmod(localT * sides, 1) * cos((floor(localT * sides) + 1) * two_pi() / sides + pi()/2))"
+y = "cy - amplitude * ((1 - fmod(localT * sides, 1)) * sin(floor(localT * sides) * two_pi() / sides + pi()/2) + fmod(localT * sides, 1) * sin((floor(localT * sides) + 1) * two_pi() / sides + pi()/2))"
+
+[trigger]
+value = "localT"
+
+[marker.1]
+x = "cx + amplitude * cos(pi() / 2)"
+y = "cy - amplitude * sin(pi() / 2)"
+
+[path]
+x = "cx + amplitude * ((1 - fmod(sweep * sides, 1)) * cos(floor(sweep * sides) * two_pi() / sides + pi()/2) + fmod(sweep * sides, 1) * cos((floor(sweep * sides) + 1) * two_pi() / sides + pi()/2))"
+y = "cy - amplitude * ((1 - fmod(sweep * sides, 1)) * sin(floor(sweep * sides) * two_pi() / sides + pi()/2) + fmod(sweep * sides, 1) * sin((floor(sweep * sides) + 1) * two_pi() / sides + pi()/2))"
+range_min = "0"
+range_max = "1"

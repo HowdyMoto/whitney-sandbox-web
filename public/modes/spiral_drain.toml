@@ -1,0 +1,26 @@
+name = "Spiral Drain"
+description = "Dots spiral inward while orbiting — a vortex of harmonic rotation"
+supportsRotation = true
+
+[params.depth]
+label = "Drain Depth"
+default = 0.75
+min = 0.2
+max = 0.95
+
+[position]
+x = "cx + amplitude * (1 - depth * localT) * cos(phase)"
+y = "cy - amplitude * (1 - depth * localT) * sin(phase)"
+
+[trigger]
+value = "fmod(phase - pi()/2 + two_pi(), two_pi()) / two_pi()"
+
+[marker.1]
+x = "cx + amplitude * cos(pi() / 2)"
+y = "cy - amplitude * sin(pi() / 2)"
+
+[path]
+x = "cx + amplitude * (1 - depth * sweep / two_pi()) * cos(sweep)"
+y = "cy - amplitude * (1 - depth * sweep / two_pi()) * sin(sweep)"
+range_min = "0"
+range_max = "two_pi()"

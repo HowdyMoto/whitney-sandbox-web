@@ -69,6 +69,7 @@ const MODE_FILES = [
   'circular', 'epicycle', 'firework', 'gravity_bounce', 'gravity_pulse',
   'horizontal_bounce', 'pendulum_wave', 'rainbow', 'rose_curve',
   'spirograph', 'vertical_bounce',
+  'unison', 'spiral_drain', 'billiard',
 ];
 
 export class CustomModeLoader {

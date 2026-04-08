@@ -54,6 +54,18 @@ Node 22+ required (lock file was generated with Node 22).
 - GitHub Actions workflow (`.github/workflows/deploy.yml`) builds and uploads `dist/` via SFTP on push to `master`
 - SFTP credentials stored as GitHub secrets: `SFTP_HOST`, `SFTP_USERNAME`, `SFTP_PASSWORD`
 
+## Animation Mode Design Philosophy
+
+The beauty of the Whitney Music Box comes from **emergence**, not complexity. Each dot performs a simple motion, but because dots move at harmonically related speeds (1x, 2x, 3x...), complex visual and musical patterns emerge from their relationships — alignments, divergences, and realignments.
+
+When designing new modes:
+- The **individual dot motion should be simple and clean** — even the innermost dots should trace a readable path.
+- The interest comes from **inter-dot relationships at harmonic speeds**, not from intricate per-dot curves.
+- Avoid fancy math formulas (Lissajous, butterfly curves, harmonographs) that just produce nested copies of a complex shape with no emergent behavior between dots.
+- Avoid duplicating existing modes with minor variations (e.g. epicycloid variants that look like Spirograph).
+- Preserve the **harmonic speed structure** — it's what connects the visuals to the music. Modes that use static spatial arrangements lose the musical connection.
+- Ask: "What simple motion produces **new** emergent patterns when 30+ dots do it at harmonically related speeds?"
+
 ## Gotchas
 
 - New asset fetch paths must use `import.meta.env.BASE_URL` prefix, not hardcoded `/` — the site lives in a subdirectory.

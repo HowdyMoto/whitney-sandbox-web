@@ -1,0 +1,26 @@
+name = "Unison"
+description = "All dots share a single orbit — harmonic speeds create bunching and spreading"
+supportsRotation = true
+
+[params.ring]
+label = "Ring Size"
+default = 0.75
+min = 0.3
+max = 0.95
+
+[position]
+x = "cx + maxRadius * ring * cos(phase)"
+y = "cy - maxRadius * ring * sin(phase)"
+
+[trigger]
+value = "fmod(phase - pi()/2 + two_pi(), two_pi()) / two_pi()"
+
+[marker.1]
+x = "cx + maxRadius * ring * cos(pi() / 2)"
+y = "cy - maxRadius * ring * sin(pi() / 2)"
+
+[path]
+x = "cx + maxRadius * ring * cos(sweep)"
+y = "cy - maxRadius * ring * sin(sweep)"
+range_min = "0"
+range_max = "two_pi()"
