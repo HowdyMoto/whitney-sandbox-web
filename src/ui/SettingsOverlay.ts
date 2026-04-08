@@ -548,6 +548,22 @@ export class SettingsOverlay {
     this.onChange?.();
   }
 
+  /** Batch rapid slider updates so only the latest value applies per frame. */
+  private pendingRAF = 0;
+  private pendingUpdates: (() => void)[] = [];
+
+  private deferToFrame(fn: () => void): void {
+    this.pendingUpdates.push(fn);
+    if (!this.pendingRAF) {
+      this.pendingRAF = requestAnimationFrame(() => {
+        this.pendingRAF = 0;
+        const updates = this.pendingUpdates;
+        this.pendingUpdates = [];
+        for (const u of updates) u();
+      });
+    }
+  }
+
   private addSectionHeader(label: string): void {
     const h = document.createElement('div');
     h.className = 'settings-section-header';
@@ -578,7 +594,7 @@ export class SettingsOverlay {
     input.addEventListener('input', () => {
       const v = parseFloat(input.value);
       valSpan.textContent = format ? format(v) : v.toFixed(2);
-      onChange(v);
+      this.deferToFrame(() => onChange(v));
     });
 
     const header = document.createElement('div');
@@ -718,7 +734,7 @@ export class SettingsOverlay {
         high = Math.min(max, Math.max(v, low + minGap));
       }
       sub.textContent = `${countNotesInRange(this.config.scale, low, high)} notes`;
-      onChange(low, high);
+      this.deferToFrame(() => onChange(low, high));
       draw();
     };
   }
@@ -811,7 +827,7 @@ export class SettingsOverlay {
       const r = parseInt(hex.slice(1, 3), 16) / 255;
       const g = parseInt(hex.slice(3, 5), 16) / 255;
       const b = parseInt(hex.slice(5, 7), 16) / 255;
-      onChange([r, g, b]);
+      this.deferToFrame(() => onChange([r, g, b]));
     });
 
     row.appendChild(input);

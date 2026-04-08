@@ -11,21 +11,27 @@ const VERT = `#version 300 es
 precision highp float;
 in vec2 a_position;
 in vec4 a_color;
+in float a_edge;      // signed distance from centre: -1 = left edge, +1 = right edge
 uniform vec2 u_resolution;
 out vec4 v_color;
+out float v_edge;
 void main() {
   vec2 ndc = (a_position / u_resolution) * 2.0 - 1.0;
   ndc.y = -ndc.y;
   gl_Position = vec4(ndc, 0.0, 1.0);
   v_color = a_color;
+  v_edge = a_edge;
 }`;
 
 const FRAG = `#version 300 es
 precision highp float;
 in vec4 v_color;
+in float v_edge;
 out vec4 fragColor;
 void main() {
-  fragColor = v_color;
+  float d = abs(v_edge);
+  float aa = 1.0 - smoothstep(0.65, 1.0, d);
+  fragColor = vec4(v_color.rgb, v_color.a * aa);
 }`;
 
 export class PathLineRenderer {
@@ -36,12 +42,14 @@ export class PathLineRenderer {
   private pathVAO: WebGLVertexArrayObject;
   private pathPosBuffer: WebGLBuffer;
   private pathColorBuffer: WebGLBuffer;
+  private pathEdgeBuffer: WebGLBuffer;
   private pathVertCount = 0;
 
   // Trigger markers (GL_TRIANGLES)
   private triggerVAO: WebGLVertexArrayObject;
   private triggerPosBuffer: WebGLBuffer;
   private triggerColorBuffer: WebGLBuffer;
+  private triggerEdgeBuffer: WebGLBuffer;
   private triggerVertCount = 0;
 
   // Rebuild tracking
@@ -74,13 +82,15 @@ export class PathLineRenderer {
     this.pathVAO = gl.createVertexArray()!;
     this.pathPosBuffer = gl.createBuffer()!;
     this.pathColorBuffer = gl.createBuffer()!;
-    this.setupVAO(this.pathVAO, this.pathPosBuffer, this.pathColorBuffer);
+    this.pathEdgeBuffer = gl.createBuffer()!;
+    this.setupVAO(this.pathVAO, this.pathPosBuffer, this.pathColorBuffer, this.pathEdgeBuffer);
 
     // Trigger VAO
     this.triggerVAO = gl.createVertexArray()!;
     this.triggerPosBuffer = gl.createBuffer()!;
     this.triggerColorBuffer = gl.createBuffer()!;
-    this.setupVAO(this.triggerVAO, this.triggerPosBuffer, this.triggerColorBuffer);
+    this.triggerEdgeBuffer = gl.createBuffer()!;
+    this.setupVAO(this.triggerVAO, this.triggerPosBuffer, this.triggerColorBuffer, this.triggerEdgeBuffer);
   }
 
   setModeLoader(loader: CustomModeLoader): void {
@@ -88,7 +98,7 @@ export class PathLineRenderer {
     this.needsRebuild = true;
   }
 
-  private setupVAO(vao: WebGLVertexArrayObject, posBuf: WebGLBuffer, colBuf: WebGLBuffer): void {
+  private setupVAO(vao: WebGLVertexArrayObject, posBuf: WebGLBuffer, colBuf: WebGLBuffer, edgeBuf: WebGLBuffer): void {
     const gl = this.gl;
     gl.bindVertexArray(vao);
 
@@ -101,6 +111,11 @@ export class PathLineRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, colBuf);
     gl.enableVertexAttribArray(aCol);
     gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, 0, 0);
+
+    const aEdge = this.shader.getAttribLocation('a_edge');
+    gl.bindBuffer(gl.ARRAY_BUFFER, edgeBuf);
+    gl.enableVertexAttribArray(aEdge);
+    gl.vertexAttribPointer(aEdge, 1, gl.FLOAT, false, 0, 0);
 
     gl.bindVertexArray(null);
   }
@@ -179,9 +194,9 @@ export class PathLineRenderer {
 
     this.modeLoader.setAllParams(this.ctx, mode, config.modeParams);
 
-    // Estimate vertex count for pre-allocation
     const positions: number[] = [];
     const colors: number[] = [];
+    const edges: number[] = [];
 
     for (let i = 0; i < numDots; i++) {
       const speed = i + 1;
@@ -200,7 +215,8 @@ export class PathLineRenderer {
         [r, g, b] = hsvToRgb(dot.hue, dot.saturation, dot.brightness);
       }
 
-      const halfWidth = pathConfig.width * 0.5;
+      // Expand by 1px for AA fringe
+      const halfWidth = pathConfig.width * 0.5 + 1.0;
       const n = points.length;
       if (n < 2) continue;
 
@@ -254,10 +270,12 @@ export class PathLineRenderer {
         const ox0 = nx0 * halfWidth, oy0 = ny0 * halfWidth;
         const ox1 = nx1 * halfWidth, oy1 = ny1 * halfWidth;
 
-        // Triangle 1
+        // Triangle 1: +edge, -edge, +edge
         positions.push(p0.x + ox0, p0.y + oy0, p0.x - ox0, p0.y - oy0, p1.x + ox1, p1.y + oy1);
-        // Triangle 2
+        edges.push(1, -1, 1);
+        // Triangle 2: -edge, +edge, -edge
         positions.push(p0.x - ox0, p0.y - oy0, p1.x + ox1, p1.y + oy1, p1.x - ox1, p1.y - oy1);
+        edges.push(-1, 1, -1);
 
         const a = pathConfig.opacity;
         colors.push(r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a, r, g, b, a);
@@ -265,7 +283,7 @@ export class PathLineRenderer {
     }
 
     this.pathVertCount = positions.length / 2;
-    this.uploadBuffers(this.pathPosBuffer, this.pathColorBuffer, positions, colors);
+    this.uploadBuffers(this.pathPosBuffer, this.pathColorBuffer, this.pathEdgeBuffer, positions, colors, edges);
   }
 
   // ─── Trigger markers ──────────────────────────────────────────
@@ -338,6 +356,7 @@ export class PathLineRenderer {
     // Build triangle fan circles
     const positions: number[] = [];
     const colors: number[] = [];
+    const edges: number[] = [];
     const segments = 12;
 
     for (const m of allMarkers) {
@@ -348,24 +367,27 @@ export class PathLineRenderer {
         // Center
         positions.push(m.x, m.y);
         colors.push(m.r, m.g, m.b, 1);
+        edges.push(0);
         // Edge 1
         positions.push(m.x + Math.cos(a1) * m.radius, m.y + Math.sin(a1) * m.radius);
         colors.push(m.r, m.g, m.b, 1);
+        edges.push(1);
         // Edge 2
         positions.push(m.x + Math.cos(a2) * m.radius, m.y + Math.sin(a2) * m.radius);
         colors.push(m.r, m.g, m.b, 1);
+        edges.push(1);
       }
     }
 
     this.triggerVertCount = positions.length / 2;
-    this.uploadBuffers(this.triggerPosBuffer, this.triggerColorBuffer, positions, colors);
+    this.uploadBuffers(this.triggerPosBuffer, this.triggerColorBuffer, this.triggerEdgeBuffer, positions, colors, edges);
   }
 
   // ─── Buffer upload helper ─────────────────────────────────────
 
   private uploadBuffers(
-    posBuf: WebGLBuffer, colBuf: WebGLBuffer,
-    positions: number[], colors: number[],
+    posBuf: WebGLBuffer, colBuf: WebGLBuffer, edgeBuf: WebGLBuffer,
+    positions: number[], colors: number[], edges: number[],
   ): void {
     const gl = this.gl;
 
@@ -374,6 +396,9 @@ export class PathLineRenderer {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, colBuf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, edgeBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(edges), gl.DYNAMIC_DRAW);
   }
 
   dispose(): void {
@@ -382,8 +407,10 @@ export class PathLineRenderer {
     gl.deleteVertexArray(this.triggerVAO);
     gl.deleteBuffer(this.pathPosBuffer);
     gl.deleteBuffer(this.pathColorBuffer);
+    gl.deleteBuffer(this.pathEdgeBuffer);
     gl.deleteBuffer(this.triggerPosBuffer);
     gl.deleteBuffer(this.triggerColorBuffer);
+    gl.deleteBuffer(this.triggerEdgeBuffer);
     this.shader.dispose();
   }
 }
