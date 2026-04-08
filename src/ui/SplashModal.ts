@@ -11,6 +11,11 @@ export class SplashModal {
       <div class="splash-content">
         <h1>Whitney Music Sandbox</h1>
         <p class="subtitle">Musical & mathematical harmony</p>
+        <p class="description">
+          Dots race around orbits at different speeds, each one
+          chiming a note as it crosses the finish line. They scatter
+          into chaos, then somehow find their way back into satisfying harmony.
+        </p>
         <p class="credit">
           Inspired by Jim Bumgardner's <a href="https://www.whitneymusicbox.org" target="_blank" rel="noopener noreferrer">Whitney Music Box</a>
         </p>
@@ -194,10 +199,21 @@ export class SplashModal {
   margin: 0 0 32px 0;
 }
 
+.splash-content .description {
+  font-size: 15px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 28px 0;
+  line-height: 1.7;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .splash-content .credit {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.5);
-  margin: 24px 0 32px 0;
+  margin: 0 0 32px 0;
   line-height: 1.6;
 }
 
