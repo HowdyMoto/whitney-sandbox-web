@@ -165,6 +165,7 @@ export class SplashModal {
   z-index: 1000;
   opacity: 1;
   transition: opacity 0.3s ease-out;
+  overflow-y: auto;
 }
 
 .splash-modal.dismissing {
@@ -178,6 +179,7 @@ export class SplashModal {
   font-family: 'Outfit', system-ui, sans-serif;
   max-width: 400px;
   padding: 40px;
+  margin: auto;
 }
 
 .splash-content h1 {
@@ -298,6 +300,69 @@ export class SplashModal {
 
   .splash-content .subtitle {
     font-size: 14px;
+  }
+}
+
+@media (max-height: 520px) {
+  .splash-content {
+    padding: 16px 20px;
+  }
+
+  .splash-content h1 {
+    font-size: 28px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .splash-content .subtitle {
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  .splash-content .description {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .splash-content .credit {
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+
+  .button-container {
+    height: 80px;
+  }
+
+  .splash-content .version {
+    bottom: 4px;
+  }
+}
+
+@media (max-height: 400px) {
+  .splash-content h1 {
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+
+  .splash-content .subtitle {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .splash-content .description {
+    display: none;
+  }
+
+  .splash-content .credit {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+
+  .splash-content .version {
+    position: static;
+    transform: none;
+    margin-top: 8px;
   }
 }
 `;
