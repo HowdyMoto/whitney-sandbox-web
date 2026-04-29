@@ -43,6 +43,7 @@ export class App {
   private config: Config;
   private renderConfig: RenderConfig;
   private isPlaying = false;
+  private togglingPlay = false;
   private lastTime = 0;
   private animFrameId = 0;
   private audioStarted = false;
@@ -194,13 +195,21 @@ export class App {
   }
 
   private async togglePlay(): Promise<void> {
-    if (!this.isPlaying) {
-      // Starting playback - ensure audio is ready FIRST
-      await this.ensureAudio();
+    // Guard against re-entrancy: if a prior toggle is still awaiting audio
+    // load, ignore this click. Without this, a second click during load
+    // would toggle isPlaying twice (once now, once when the first await
+    // resolves), causing an apparent auto-pause a few seconds in.
+    if (this.togglingPlay) return;
+    this.togglingPlay = true;
+    try {
+      if (!this.isPlaying) {
+        await this.ensureAudio();
+      }
+      this.isPlaying = !this.isPlaying;
+      this.updateTransport();
+    } finally {
+      this.togglingPlay = false;
     }
-    // Only toggle after audio is ready
-    this.isPlaying = !this.isPlaying;
-    this.updateTransport();
   }
 
   private async ensureAudio(): Promise<void> {
