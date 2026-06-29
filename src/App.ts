@@ -43,7 +43,6 @@ export class App {
   private config: Config;
   private renderConfig: RenderConfig;
   private isPlaying = false;
-  private togglingPlay = false;
   private lastTime = 0;
   private animFrameId = 0;
   private audioStarted = false;
@@ -194,21 +193,15 @@ export class App {
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
   }
 
-  private async togglePlay(): Promise<void> {
-    // Guard against re-entrancy: if a prior toggle is still awaiting audio
-    // load, ignore this click. Without this, a second click during load
-    // would toggle isPlaying twice (once now, once when the first await
-    // resolves), causing an apparent auto-pause a few seconds in.
-    if (this.togglingPlay) return;
-    this.togglingPlay = true;
-    try {
-      if (!this.isPlaying) {
-        await this.ensureAudio();
-      }
-      this.isPlaying = !this.isPlaying;
-      this.updateTransport();
-    } finally {
-      this.togglingPlay = false;
+  private togglePlay(): void {
+    // Flip play state synchronously so the animation starts (and the button
+    // responds) on the very first tap. Audio is initialized in the
+    // background — gating playback on a network-bound sample load made the
+    // play button appear unresponsive on mobile, so users tapped repeatedly.
+    this.isPlaying = !this.isPlaying;
+    this.updateTransport();
+    if (this.isPlaying && !this.audioStarted) {
+      void this.ensureAudio();
     }
   }
 
@@ -222,11 +215,11 @@ export class App {
   }
 
   /** Warm up AudioContext on any user gesture so it's ready for playback */
-  private async warmAudioContext(): Promise<void> {
-    if (this.audioEngine.hasContext()) return;
-    await this.audioEngine.ensureContext();
-    // Play silent audio to fully wake up mobile audio context
-    this.audioEngine.playNoteByMidi(60, 0.001);
+  private warmAudioContext(): void {
+    // ensureContext() creates + unlocks the context (silent buffer) within
+    // this gesture, then resumes it if already suspended. Fire-and-forget so
+    // the calling gesture handler isn't blocked.
+    void this.audioEngine.ensureContext();
   }
 
   private loop = (): void => {

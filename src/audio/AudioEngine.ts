@@ -65,6 +65,19 @@ export class AudioEngine {
       gain.connect(this.masterGain);
       this.voices.push({ source: null, gain, midiNote: -1, startTime: 0 });
     }
+
+    // iOS/mobile unlock: play a silent one-sample buffer within the user
+    // gesture that created this context. Resuming alone isn't always enough —
+    // mobile Safari requires an actual buffer to start before audio flows.
+    try {
+      const unlock = this.ctx.createBufferSource();
+      unlock.buffer = this.ctx.createBuffer(1, 1, 22050);
+      unlock.connect(this.ctx.destination);
+      unlock.start(0);
+    } catch { /* unlock is best-effort */ }
+
+    // Context may start suspended on mobile even after creation in a gesture.
+    if (this.ctx.state === 'suspended') await this.ctx.resume();
   }
 
   async switchInstrument(instrumentKey: string, lowMidi: number, highMidi: number): Promise<void> {
