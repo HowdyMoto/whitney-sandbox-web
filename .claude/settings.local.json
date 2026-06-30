@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(wc -l /d/GitHub_HowdyMoto/whitney-sandbox-web/src/**/*.ts)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__new_page"
     ]
   }
 }

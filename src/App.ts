@@ -46,6 +46,10 @@ export class App {
   private lastTime = 0;
   private animFrameId = 0;
   private audioStarted = false;
+  // Background shaders animate on their own clock so they stay alive even
+  // when the box is paused or hasn't been played yet — otherwise randomizing
+  // before pressing play leaves the time-driven backgrounds frozen/blank.
+  private shaderTime = 0;
 
   // Trail particle emission accumulator (per dot)
   private trailEmitAccum: number[] = [];
@@ -229,6 +233,11 @@ export class App {
     const dt = Math.min(now - this.lastTime, 0.1);
     this.lastTime = now;
 
+    // Advance the background-shader clock continuously. While playing it
+    // tracks the music speed (matching prior behavior); while paused it keeps
+    // ticking at 1x so backgrounds remain animated.
+    this.shaderTime += dt * (this.isPlaying ? this.config.speedMultiplier : 1);
+
     resizeCanvas();
     this.update(dt);
     this.draw();
@@ -322,7 +331,9 @@ export class App {
 
     // Update audio reactive data (EQ bands, trigger events for shaders)
     this.audioReactive.update(dt);
-    this.audioReactive.updateTriggerEvents(dots, this.animEngine.getCurrentTime());
+    // Use the shader clock so trigger-event birth times share the same time
+    // base as the background shaders that consume them.
+    this.audioReactive.updateTriggerEvents(dots, this.shaderTime);
   }
 
   private draw(): void {
@@ -352,7 +363,7 @@ export class App {
     if (this.bgShaderManager.isActive()) {
       const sceneFbo = this.bloomConfig.enabled ? this.bloomPass.sceneFBO : null;
       this.bgShaderManager.render(
-        dots, this.animEngine.getCurrentTime(), this.animEngine.getCycleProgress(),
+        dots, this.shaderTime, this.animEngine.getCycleProgress(),
         this.renderConfig.backgroundColor, w, h,
         sceneFbo, this.audioReactive,
       );
