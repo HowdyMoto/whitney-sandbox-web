@@ -50,6 +50,9 @@ export class App {
   // when the box is paused or hasn't been played yet — otherwise randomizing
   // before pressing play leaves the time-driven backgrounds frozen/blank.
   private shaderTime = 0;
+  // Whether playback has ever started this session (used to auto-start on the
+  // user's first randomize so music-reactive backgrounds come alive).
+  private hasEverPlayed = false;
 
   // Trail particle emission accumulator (per dot)
   private trailEmitAccum: number[] = [];
@@ -203,6 +206,7 @@ export class App {
     // background — gating playback on a network-bound sample load made the
     // play button appear unresponsive on mobile, so users tapped repeatedly.
     this.isPlaying = !this.isPlaying;
+    if (this.isPlaying) this.hasEverPlayed = true;
     this.updateTransport();
     if (this.isPlaying && !this.audioStarted) {
       void this.ensureAudio();
@@ -503,6 +507,12 @@ export class App {
   }
 
   private randomizeMode(): void {
+    // On the user's first-ever interaction, start playback so the scene (and
+    // note-reactive backgrounds) come alive instead of sitting frozen. Once
+    // they've played at least once, respect a deliberate pause.
+    if (!this.isPlaying && !this.hasEverPlayed) {
+      this.togglePlay();
+    }
     this.settingsOverlay.showLoadingDuring(() => this.doRandomize());
   }
 
@@ -552,9 +562,12 @@ export class App {
     c.numNotes = Math.max(1, countNotesInRange(c.scale, c.lowNote, c.highNote));
 
     // ── Instrument ──
+    // Kick off the sample load in the background — don't await it, so the
+    // visual randomize (and the dice button) stay responsive even while the
+    // new instrument's samples download over the network.
     const instruments = getAllInstruments();
     const newInstrument = pick(instruments).key;
-    await this.switchInstrument(newInstrument);
+    void this.switchInstrument(newInstrument);
 
     // ── Timing ──
     c.cycleDuration = snap(range(30, 300), 1);
@@ -600,9 +613,14 @@ export class App {
     this.bloomConfig.softKnee = snap(range(0.2, 0.8), 0.01);
 
     // ── Background shader ──
+    // Bias toward actually showing a shader (only skip ~15% of the time) and
+    // prefer non-simulation shaders: the simulation ones (Aurora, Fireworks)
+    // are note-reactive and look blank until playback drives them.
     const shaderDefs = this.bgShaderManager.getShaderDefs();
-    if (shaderDefs.length > 0 && rand() > 0.3) {
-      const shader = pick(shaderDefs);
+    if (shaderDefs.length > 0 && rand() > 0.15) {
+      const stateless = shaderDefs.filter(d => !d.needsSimulation);
+      const pool = (stateless.length > 0 && rand() < 0.75) ? stateless : shaderDefs;
+      const shader = pick(pool);
       c.backgroundShader = shader.key;
       // Randomize shader params within their rand ranges
       for (const p of shader.params) {
